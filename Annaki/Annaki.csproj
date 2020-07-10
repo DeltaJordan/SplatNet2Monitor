@@ -17,4 +17,10 @@
     <ProjectReference Include="..\SplatnetMonitor\SplatNet2.Net.Monitor.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Data\settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
