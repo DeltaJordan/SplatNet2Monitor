@@ -16,6 +16,10 @@ using SplatNet2.Net.Api.Data.Battles;
 using SplatNet2.Net.Api.Data.Battles.Gears;
 using SplatNet2.Net.Api.Network.Data;
 using SplatNet2.Net.Monitor.Workers;
+using TwitchLib.Api;
+using TwitchLib.Api.Services;
+using TwitchLib.Api.Services.Events.LiveStreamMonitor;
+using TwitchLib.Api.V5.Models.Users;
 using LogLevel = NLog.LogLevel;
 
 namespace Annaki
@@ -24,6 +28,10 @@ namespace Annaki
     {
         public static DiscordClient Client;
         public static BattleMonitor BattleMonitor;
+
+        public static ulong StreamNotificationChannel { get; set; } = 0;
+
+        private static TwitchAPI twitchApi;
 
         private static CommandsNextModule commands;
 
@@ -99,7 +107,41 @@ namespace Annaki
 
             await Client.ConnectAsync();
 
+            twitchApi = new TwitchAPI();
+            LiveStreamMonitorService liveStreamMonitorService = new LiveStreamMonitorService(twitchApi);
+            liveStreamMonitorService.SetChannelsByName(new List<string> { "DeltaJordan" });
+            liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
+            liveStreamMonitorService.Start();
+
             await StartMonitor();
+        }
+
+        private static async void LiveStreamMonitorService_OnStreamOnline(object sender, OnStreamOnlineArgs e)
+        {
+            if (StreamNotificationChannel == 0)
+                return;
+
+            User user = await twitchApi.V5.Users.GetUserByIDAsync(e.Stream.UserId);
+
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
+            {
+                Title = e.Stream.Title,
+                Url = $"https://www.twitch.tv/{user.Name}",
+                ImageUrl = e.Stream.ThumbnailUrl,
+                ThumbnailUrl = user.Logo,
+                Timestamp = e.Stream.StartedAt
+            };
+
+            embedBuilder.WithAuthor(user.Name);
+
+            DiscordChannel notificationChannel = await Client.GetChannelAsync(StreamNotificationChannel);
+            DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
+                string.Equals(x.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase));
+
+            if (notificationRole == null)
+                return;
+
+            await notificationChannel.SendMessageAsync($"{notificationRole.Mention}", embed: embedBuilder.Build());
         }
 
         private static async Task StartMonitor()
