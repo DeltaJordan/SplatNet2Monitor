@@ -11,7 +11,7 @@ namespace Annaki.Commands
 {
     public class StreamModule : BaseModule
     {
-        [Command("bind stream")]
+        [Command("bind-stream")]
         public async Task BindStream(CommandContext ctx)
         {
             Program.StreamNotificationChannel = ctx.Channel.Id;
