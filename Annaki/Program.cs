@@ -29,8 +29,6 @@ namespace Annaki
         public static DiscordClient Client;
         public static BattleMonitor BattleMonitor;
 
-        public static ulong StreamNotificationChannel { get; set; } = 0;
-
         private static TwitchAPI twitchApi;
 
         private static CommandsNextModule commands;
@@ -108,6 +106,10 @@ namespace Annaki
             await Client.ConnectAsync();
 
             twitchApi = new TwitchAPI();
+            twitchApi.Settings.ClientId = Globals.BotSettings.TwitchClientId;
+            twitchApi.Settings.Secret = Globals.BotSettings.TwitchSecret;
+            twitchApi.Settings.AccessToken = twitchApi.Helix.Extensions.GetAccessToken();
+
             LiveStreamMonitorService liveStreamMonitorService = new LiveStreamMonitorService(twitchApi);
             liveStreamMonitorService.SetChannelsByName(new List<string> { "DeltaJordan" });
             liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
@@ -118,7 +120,7 @@ namespace Annaki
 
         private static async void LiveStreamMonitorService_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
-            if (StreamNotificationChannel == 0)
+            if (Globals.BotSettings.StreamNotificationChannelId == 0)
                 return;
 
             User user = await twitchApi.V5.Users.GetUserByIDAsync(e.Stream.UserId);
@@ -134,7 +136,7 @@ namespace Annaki
 
             embedBuilder.WithAuthor(user.Name);
 
-            DiscordChannel notificationChannel = await Client.GetChannelAsync(StreamNotificationChannel);
+            DiscordChannel notificationChannel = await Client.GetChannelAsync(Globals.BotSettings.StreamNotificationChannelId);
             DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
                 string.Equals(x.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase));
 

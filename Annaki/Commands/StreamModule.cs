@@ -14,14 +14,15 @@ namespace Annaki.Commands
         [Command("bind-stream")]
         public async Task BindStream(CommandContext ctx)
         {
-            Program.StreamNotificationChannel = ctx.Channel.Id;
+            Globals.BotSettings.StreamNotificationChannelId = ctx.Channel.Id;
+            Globals.BotSettings.SaveSettings();
 
             DiscordMessage message = await ctx.RespondAsync("Bound channel as stream notification channel!");
 
             await Task.Delay(10000);
 
-            await message.DeleteAsync();
             await ctx.Message.DeleteAsync();
+            await message.DeleteAsync();
         }
 
         protected override void Setup(DiscordClient client)

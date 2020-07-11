@@ -11,6 +11,15 @@ namespace Annaki
         [JsonProperty("bot_token")]
         public string BotToken { get; set; }
 
+        [JsonProperty("twitch_client_id")]
+        public string TwitchClientId { get; set; }
+
+        [JsonProperty("notification_id")] 
+        public ulong StreamNotificationChannelId { get; set; }
+
+        [JsonProperty("twitch_token")]
+        public string TwitchSecret { get; set; }
+
         [JsonProperty("prefix")]
         public string Prefix { get; set; }
 
