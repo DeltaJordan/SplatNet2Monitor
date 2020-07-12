@@ -129,12 +129,12 @@ namespace Annaki
             {
                 Title = e.Stream.Title,
                 Url = $"https://www.twitch.tv/{user.Name}",
-                ImageUrl = e.Stream.ThumbnailUrl,
+                ImageUrl = $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg",
                 ThumbnailUrl = user.Logo,
                 Timestamp = e.Stream.StartedAt
             };
 
-            embedBuilder.WithAuthor(user.Name);
+            embedBuilder.WithAuthor(user.DisplayName);
 
             DiscordChannel notificationChannel = await Client.GetChannelAsync(Globals.BotSettings.StreamNotificationChannelId);
             DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
@@ -143,7 +143,7 @@ namespace Annaki
             if (notificationRole == null)
                 return;
 
-            await notificationChannel.SendMessageAsync($"{notificationRole.Mention}", embed: embedBuilder.Build());
+            await notificationChannel.SendMessageAsync($"{notificationRole.Mention} DeltaJordan is live!", embed: embedBuilder.Build());
         }
 
         private static async Task StartMonitor()
