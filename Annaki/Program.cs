@@ -129,9 +129,10 @@ namespace Annaki
             {
                 Title = e.Stream.Title,
                 Url = $"https://www.twitch.tv/{user.Name}",
-                ImageUrl = $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg",
+                ImageUrl = $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg?rnd={e.Stream.Id}",
                 ThumbnailUrl = user.Logo,
-                Timestamp = e.Stream.StartedAt
+                Timestamp = e.Stream.StartedAt,
+                Color = new DiscordColor(100, 65, 165)
             };
 
             embedBuilder.WithAuthor(user.DisplayName);
@@ -204,19 +205,50 @@ namespace Annaki
         {
             DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
 
+            List<string> errorChunks = new List<string>();
+
+            using StringReader stringReader = new StringReader(e.exception.ToString());
+
+            string readLine;
+            string currentChunk = string.Empty;
+
+            while ((readLine = await stringReader.ReadLineAsync()) != null)
+            {
+                readLine += "\n";
+
+                if (currentChunk.Length + readLine.Length > 2000)
+                {
+                    errorChunks.Add(currentChunk);
+
+                    currentChunk = readLine;
+
+                    continue;
+                }
+
+                currentChunk += readLine;
+            }
+
+            errorChunks.Add(currentChunk);
+
             if (e.stopped)
             {
                 await dmChannel.SendMessageAsync(
                     "Too many errors have occured. To reset the bot's error count, run `a.reset`, preferably after fixing any issues.");
 
-                await dmChannel.SendMessageAsync(e.exception.ToString());
+                foreach (string errorChunk in errorChunks)
+                {
+                    await dmChannel.SendMessageAsync(errorChunk);
+                }
             }
             else
             {
                 await dmChannel.SendMessageAsync(
                     "An error has occured. The exception count has increased by one.");
 
-                await dmChannel.SendMessageAsync(e.exception.ToString());
+                foreach (string errorChunk in errorChunks)
+                {
+                    await dmChannel.SendMessageAsync(errorChunk);
+                }
             }
         }
 
