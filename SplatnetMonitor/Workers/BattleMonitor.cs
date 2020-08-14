@@ -30,7 +30,7 @@ namespace SplatNet2.Net.Monitor.Workers
         private readonly List<Clothing> lookingForClothing = new List<Clothing>();
         private readonly List<Shoes> lookingForShoes = new List<Shoes>();
 
-        private const string A_VERSION = "1.5.4";
+        private const string A_VERSION = "1.5.5";
 
         private Cookie iksmCookie;
 
