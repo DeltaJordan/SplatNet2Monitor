@@ -17,6 +17,7 @@ using SplatNet2.Net.Api.Data.Battles.Gears;
 using SplatNet2.Net.Api.Network.Data;
 using SplatNet2.Net.Monitor.Workers;
 using TwitchLib.Api;
+using TwitchLib.Api.Helix.Models.Games;
 using TwitchLib.Api.Services;
 using TwitchLib.Api.Services.Events.LiveStreamMonitor;
 using TwitchLib.Api.V5.Models.Users;
@@ -131,11 +132,15 @@ namespace Annaki
                 Url = $"https://www.twitch.tv/{user.Name}",
                 ImageUrl = $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg?rnd={e.Stream.Id}",
                 ThumbnailUrl = user.Logo,
-                Timestamp = e.Stream.StartedAt,
                 Color = new DiscordColor(100, 65, 165)
             };
 
             embedBuilder.WithAuthor(user.DisplayName);
+
+            GetGamesResponse gamesResponse = await twitchApi.Helix.Games.GetGamesAsync(new List<string> {e.Stream.GameId});
+            Game streamingGame = gamesResponse.Games.First();
+
+            embedBuilder.WithFooter($"Playing: {streamingGame.Name}", streamingGame.BoxArtUrl);
 
             DiscordChannel notificationChannel = await Client.GetChannelAsync(Globals.BotSettings.StreamNotificationChannelId);
             DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
