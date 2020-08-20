@@ -53,7 +53,7 @@ namespace SplatNet2.Net.Monitor.Workers
 
         private async Task<SplatnetCookie> AuthenticateCookie()
         {
-            using SplatnetAuthClient splatnetClient = new SplatnetAuthClient();
+            SplatnetAuthClient splatnetClient = new SplatnetAuthClient();
 
             string sessionToken = await splatnetClient.LogIn(A_VERSION);
             SplatnetCookie splatnetCookie = await splatnetClient.GetCookie(sessionToken, A_VERSION);

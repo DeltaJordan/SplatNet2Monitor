@@ -16,27 +16,27 @@ using SplatNet2.Net.Api.Network.Extensions;
 
 namespace SplatNet2.Net.Api.Network
 {
-    public class SplatnetAuthClient : IDisposable
+    public class SplatnetAuthClient
     {
         private readonly RandomGenerator random = new RandomGenerator();
 
-        private readonly CookieContainer cookies;
-        private readonly LoggingHandler loggingHandler;
-        private readonly HttpClient httpClient;
+        private static readonly CookieContainer cookies;
+        private static readonly LoggingHandler loggingHandler;
+        private static readonly HttpClient httpClient;
 
         private string version = "unknown";
 
-        public SplatnetAuthClient()
+        static SplatnetAuthClient()
         {
-            this.cookies = new CookieContainer();
+            cookies = new CookieContainer();
 
-            this.loggingHandler = new LoggingHandler(new HttpClientHandler
+            loggingHandler = new LoggingHandler(new HttpClientHandler
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                CookieContainer = this.cookies
+                CookieContainer = cookies
             });
 
-            this.httpClient = new HttpClient(this.loggingHandler);
+            httpClient = new HttpClient(loggingHandler);
         }
 
         public async Task<string> LogIn(string version)
@@ -51,16 +51,16 @@ namespace SplatNet2.Net.Api.Network
 
             string authCodeChallenge = Base64UrlEncoder.Encode(hashArray).Replace("=", "");
 
-            this.httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Clear();
 
-            this.httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8n");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip,deflate,br");
-            this.httpClient.DefaultRequestHeaders.Add("Cache-Control", "max-age=0");
-            this.httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
-            this.httpClient.DefaultRequestHeaders.Add("DNT", "1");
-            this.httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
-            this.httpClient.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
-            this.httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 7.1.2; Pixel Build/NJH47D; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/59.0.3071.125 Mobile Safari/537.36");
+            httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8n");
+            httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip,deflate,br");
+            httpClient.DefaultRequestHeaders.Add("Cache-Control", "max-age=0");
+            httpClient.DefaultRequestHeaders.Add("Connection", "keep-alive");
+            httpClient.DefaultRequestHeaders.Add("DNT", "1");
+            httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
+            httpClient.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 7.1.2; Pixel Build/NJH47D; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/59.0.3071.125 Mobile Safari/537.36");
 
 
             string body = $@"{{
@@ -93,7 +93,7 @@ namespace SplatNet2.Net.Api.Network
                 RequestUri = requestUri
             };
 
-            await this.httpClient.SendAsync(requestMessage);
+            await httpClient.SendAsync(requestMessage);
 
             string postLogin = requestUri.AbsoluteUri;
 
@@ -122,14 +122,14 @@ namespace SplatNet2.Net.Api.Network
 
         public async Task<string> GetSessionToken(string sessionTokenCode, string authCodeVerifier)
         {
-            this.httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Clear();
 
-            this.httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
-            this.httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
-            this.httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
-            this.httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+            httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
+            httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
+            httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
+            httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
 
             Dictionary<string, string> body = new Dictionary<string, string>
             {
@@ -149,7 +149,7 @@ namespace SplatNet2.Net.Api.Network
 
             // requestMessage.Content.Headers.ContentLength = 540;
 
-            using HttpResponseMessage responseMessage = await this.httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
+            using HttpResponseMessage responseMessage = await httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
 
             return JObject.Parse(await responseMessage.Content.ReadAsStringAsync())["session_token"].Value<string>();
         }
@@ -161,14 +161,14 @@ namespace SplatNet2.Net.Api.Network
             int timestamp = (int) (DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
             string guid = Guid.NewGuid().ToString();
 
-            this.httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Clear();
 
-            this.httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
-            this.httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
-            this.httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
-            this.httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+            httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
+            httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
+            httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
+            httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
 
             dynamic tokenBody = new JObject();
             tokenBody.client_id = "71b963c1b7b6d119";
@@ -184,21 +184,21 @@ namespace SplatNet2.Net.Api.Network
                 Method = HttpMethod.Post
             };
 
-            HttpResponseMessage tokenResponseMessage = await this.httpClient.SendAsync(tokenRequestMessage);
+            HttpResponseMessage tokenResponseMessage = await httpClient.SendAsync(tokenRequestMessage);
 
             JObject tokenJsonResponse = JObject.Parse(await tokenResponseMessage.Content.ReadAsStringAsync());
 
             try
             {
-                this.httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Clear();
 
-                this.httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-                this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-                this.httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
-                this.httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {tokenJsonResponse["access_token"].Value<string>()}");
-                this.httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
-                this.httpClient.DefaultRequestHeaders.Add("Host", "api.accounts.nintendo.com");
-                this.httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
+                httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+                httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
+                httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {tokenJsonResponse["access_token"].Value<string>()}");
+                httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
+                httpClient.DefaultRequestHeaders.Add("Host", "api.accounts.nintendo.com");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
             }
             catch
             {
@@ -211,7 +211,7 @@ namespace SplatNet2.Net.Api.Network
 
             const string userInfoUrl = "https://api.accounts.nintendo.com/2.0.0/users/me";
 
-            HttpResponseMessage userInfoResponseMessage = await this.httpClient.GetAsync(userInfoUrl);
+            HttpResponseMessage userInfoResponseMessage = await httpClient.GetAsync(userInfoUrl);
 
             JObject userInfoJson = JObject.Parse(await userInfoResponseMessage.Content.ReadAsStringAsync());
 
@@ -245,24 +245,24 @@ namespace SplatNet2.Net.Api.Network
                 throw;
             }
 
-            this.httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Clear();
 
-            this.httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
-            this.httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer");
-            this.httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
-            this.httpClient.DefaultRequestHeaders.Add("Host", "api-lp1.znc.srv.nintendo.net");
-            this.httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.8.0 (Android/7.1.2)");
-            this.httpClient.DefaultRequestHeaders.Add("X-Platform", "Android");
-            this.httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.8.0");
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+            httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
+            httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
+            httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer");
+            httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
+            httpClient.DefaultRequestHeaders.Add("Host", "api-lp1.znc.srv.nintendo.net");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.8.0 (Android/7.1.2)");
+            httpClient.DefaultRequestHeaders.Add("X-Platform", "Android");
+            httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.8.0");
 
             dynamic splatoonTokenBody = new JObject();
             splatoonTokenBody.parameter = parameter;
 
             const string splatoonTokenUrl = "https://api-lp1.znc.srv.nintendo.net/v1/Account/Login";
 
-            HttpResponseMessage splatoonTokenResponseMessage = await this.httpClient.PostAsync(splatoonTokenUrl,
+            HttpResponseMessage splatoonTokenResponseMessage = await httpClient.PostAsync(splatoonTokenUrl,
                 new StringContent(splatoonTokenBody.ToString(), Encoding.UTF8, "application/json"));
 
             JObject splatoonTokenJObject = JObject.Parse(await splatoonTokenResponseMessage.Content.ReadAsStringAsync());
@@ -286,16 +286,16 @@ namespace SplatNet2.Net.Api.Network
                 throw;
             }
 
-            this.httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Clear();
 
-            this.httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-            this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-            this.httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {splatoonTokenJObject["result"]["webApiServerCredential"]["accessToken"].Value<string>()}");
-            this.httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
-            this.httpClient.DefaultRequestHeaders.Add("Host", "api-lp1.znc.srv.nintendo.net");
-            this.httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.8.0 (Android/7.1.2)");
-            this.httpClient.DefaultRequestHeaders.Add("X-Platform", "Android");
-            this.httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.8.0");
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+            httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {splatoonTokenJObject["result"]["webApiServerCredential"]["accessToken"].Value<string>()}");
+            httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
+            httpClient.DefaultRequestHeaders.Add("Host", "api-lp1.znc.srv.nintendo.net");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.8.0 (Android/7.1.2)");
+            httpClient.DefaultRequestHeaders.Add("X-Platform", "Android");
+            httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.8.0");
 
             dynamic splatoonAccessTokenBody = new JObject();
             parameter = new JObject();
@@ -310,26 +310,26 @@ namespace SplatNet2.Net.Api.Network
 
             const string splatoonAccessTokenUrl = "https://api-lp1.znc.srv.nintendo.net/v2/Game/GetWebServiceToken";
 
-            HttpResponseMessage splatoonAccessTokenResponseMessage = await this.httpClient.PostAsync(splatoonAccessTokenUrl,
+            HttpResponseMessage splatoonAccessTokenResponseMessage = await httpClient.PostAsync(splatoonAccessTokenUrl,
                 new StringContent(splatoonAccessTokenBody.ToString(), Encoding.UTF8, "application/json"));
 
             JObject splatoonAccessTokenJObject = JObject.Parse(await splatoonAccessTokenResponseMessage.Content.ReadAsStringAsync());
 
             try
             {
-                this.httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Clear();
 
-                this.httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                this.httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip,deflate");
-                this.httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
-                this.httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
-                this.httpClient.DefaultRequestHeaders.Add("DNT", "0");
-                this.httpClient.DefaultRequestHeaders.Add("Host", "app.splatoon2.nintendo.net");
-                this.httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 7.1.2; Pixel Build/NJH47D; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/59.0.3071.125 Mobile Safari/537.36");
-                this.httpClient.DefaultRequestHeaders.Add("X-GameWebToken", splatoonAccessTokenJObject["result"]["accessToken"].Value<string>());
-                this.httpClient.DefaultRequestHeaders.Add("X-IsAppAnalyticsOptedIn", "false");
-                this.httpClient.DefaultRequestHeaders.Add("X-IsAnalyticsOptedIn", "false");
-                this.httpClient.DefaultRequestHeaders.Add("X-Requested-With", "com.nintendo.znca");
+                httpClient.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                httpClient.DefaultRequestHeaders.Add("Accept-Encoding", "gzip,deflate");
+                httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
+                httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
+                httpClient.DefaultRequestHeaders.Add("DNT", "0");
+                httpClient.DefaultRequestHeaders.Add("Host", "app.splatoon2.nintendo.net");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Linux; Android 7.1.2; Pixel Build/NJH47D; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/59.0.3071.125 Mobile Safari/537.36");
+                httpClient.DefaultRequestHeaders.Add("X-GameWebToken", splatoonAccessTokenJObject["result"]["accessToken"].Value<string>());
+                httpClient.DefaultRequestHeaders.Add("X-IsAppAnalyticsOptedIn", "false");
+                httpClient.DefaultRequestHeaders.Add("X-IsAnalyticsOptedIn", "false");
+                httpClient.DefaultRequestHeaders.Add("X-Requested-With", "com.nintendo.znca");
             }
             catch
             {
@@ -343,9 +343,9 @@ namespace SplatNet2.Net.Api.Network
 
             const string cookieUrl = "https://app.splatoon2.nintendo.net/?lang=en-US";
 
-            await this.httpClient.GetAsync(cookieUrl);
+            await httpClient.GetAsync(cookieUrl);
 
-            Cookie cookie = this.cookies.GetCookies(new Uri(cookieUrl))["iksm_session"];
+            Cookie cookie = cookies.GetCookies(new Uri(cookieUrl))["iksm_session"];
 
             return new SplatnetCookie
             {
@@ -368,9 +368,9 @@ namespace SplatNet2.Net.Api.Network
 
             try
             {
-                this.httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Clear();
 
-                this.httpClient.DefaultRequestHeaders.Add("User-Agent", $"splatnet2statink/{this.version}");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", $"splatnet2statink/{this.version}");
 
                 Dictionary<string, string> apiBodyDictionary = new Dictionary<string, string>
                 {
@@ -387,7 +387,7 @@ namespace SplatNet2.Net.Api.Network
                     RequestUri = new Uri(url)
                 };
 
-                HttpResponseMessage responseMessage = await this.httpClient.SendAsync(requestMessage);
+                HttpResponseMessage responseMessage = await httpClient.SendAsync(requestMessage);
 
                 return JObject.Parse(await responseMessage.Content.ReadAsStringAsync())["hash"].Value<string>();
             }
@@ -408,17 +408,17 @@ namespace SplatNet2.Net.Api.Network
             {
                 string hash = await this.GetHashFromS2SApi(idToken, timestamp);
 
-                this.httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Clear();
 
-                this.httpClient.DefaultRequestHeaders.Add("x-guid", guid);
-                this.httpClient.DefaultRequestHeaders.Add("x-hash", hash);
-                this.httpClient.DefaultRequestHeaders.Add("x-iid", type);
-                this.httpClient.DefaultRequestHeaders.Add("x-time", timestamp.ToString());
-                this.httpClient.DefaultRequestHeaders.Add("x-token", idToken);
-                this.httpClient.DefaultRequestHeaders.Add("x-ver", "3");
+                httpClient.DefaultRequestHeaders.Add("x-guid", guid);
+                httpClient.DefaultRequestHeaders.Add("x-hash", hash);
+                httpClient.DefaultRequestHeaders.Add("x-iid", type);
+                httpClient.DefaultRequestHeaders.Add("x-time", timestamp.ToString());
+                httpClient.DefaultRequestHeaders.Add("x-token", idToken);
+                httpClient.DefaultRequestHeaders.Add("x-ver", "3");
 
                 HttpResponseMessage responseMessage =
-                    await this.httpClient.GetAsync("https://flapg.com/ika2/api/login?public");
+                    await httpClient.GetAsync("https://flapg.com/ika2/api/login?public");
 
                 return JObject.Parse(await responseMessage.Content.ReadAsStringAsync())["result"].Value<JObject>();
             }
@@ -428,12 +428,6 @@ namespace SplatNet2.Net.Api.Network
 
                 throw;
             }
-        }
-
-        public void Dispose()
-        {
-            this.loggingHandler?.Dispose();
-            this.httpClient?.Dispose();
         }
     }
 }
