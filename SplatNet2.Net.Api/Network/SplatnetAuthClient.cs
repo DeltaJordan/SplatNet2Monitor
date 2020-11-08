@@ -129,7 +129,7 @@ namespace SplatNet2.Net.Api.Network
             httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
             httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
             httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.9.0 NASDKAPI Android");
 
             Dictionary<string, string> body = new Dictionary<string, string>
             {
@@ -168,7 +168,7 @@ namespace SplatNet2.Net.Api.Network
             httpClient.DefaultRequestHeaders.Add("Accept-Language", "en-US");
             httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
             httpClient.DefaultRequestHeaders.Add("Host", "accounts.nintendo.com");
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.9.0 NASDKAPI Android");
 
             dynamic tokenBody = new JObject();
             tokenBody.client_id = "71b963c1b7b6d119";
@@ -198,7 +198,7 @@ namespace SplatNet2.Net.Api.Network
                 httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {tokenJsonResponse["access_token"].Value<string>()}");
                 httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
                 httpClient.DefaultRequestHeaders.Add("Host", "api.accounts.nintendo.com");
-                httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.8.0 NASDKAPI Android");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "OnlineLounge/1.9.0 NASDKAPI Android");
             }
             catch
             {
@@ -253,9 +253,9 @@ namespace SplatNet2.Net.Api.Network
             httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer");
             httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
             httpClient.DefaultRequestHeaders.Add("Host", "api-lp1.znc.srv.nintendo.net");
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.8.0 (Android/7.1.2)");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.9.0 (Android/7.1.2)");
             httpClient.DefaultRequestHeaders.Add("X-Platform", "Android");
-            httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.8.0");
+            httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.9.0");
 
             dynamic splatoonTokenBody = new JObject();
             splatoonTokenBody.parameter = parameter;
@@ -293,9 +293,9 @@ namespace SplatNet2.Net.Api.Network
             httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {splatoonTokenJObject["result"]["webApiServerCredential"]["accessToken"].Value<string>()}");
             httpClient.DefaultRequestHeaders.Add("Connection", "Keep-Alive");
             httpClient.DefaultRequestHeaders.Add("Host", "api-lp1.znc.srv.nintendo.net");
-            httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.8.0 (Android/7.1.2)");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "com.nintendo.znca/1.9.0 (Android/7.1.2)");
             httpClient.DefaultRequestHeaders.Add("X-Platform", "Android");
-            httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.8.0");
+            httpClient.DefaultRequestHeaders.Add("X-ProductVersion", "1.9.0");
 
             dynamic splatoonAccessTokenBody = new JObject();
             parameter = new JObject();
