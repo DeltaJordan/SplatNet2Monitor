@@ -90,7 +90,8 @@ namespace Annaki.Data
             decimal sessionDelta = (sortedBattles.Last().XPower - sortedBattles.First().XPower).GetValueOrDefault(0);
             Color deltaColor = sessionDelta > 0 ? Color.Green : Color.Red;
 
-            this.plot.PlotAnnotation($"Session Δ{Math.Abs(sessionDelta)}", -10, fontColor: deltaColor, shadow: true);
+            this.plot.PlotAnnotation($"Session {sessionDelta}", -10, fontColor: deltaColor, shadow: true,
+                fillColor: Color.Black, lineColor: Color.White, fillAlpha: 1);
         }
 
         public void PlotLobbyAverages()
