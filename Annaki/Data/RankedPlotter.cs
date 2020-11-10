@@ -96,7 +96,7 @@ namespace Annaki.Data
             double[] xPoints = enumerable.Select(x => (double)x.Index).ToArray();
             double[] yPoints = enumerable.Select(x => (double)x.Power.GetValueOrDefault(-1)).ToArray();
 
-            this.plot.PlotScatter(xPoints, yPoints, Color.Blue, label: "Lobby Power", lineStyle: LineStyle.None, markerShape: MarkerShape.openDiamond);
+            this.plot.PlotScatter(xPoints, yPoints, Color.Blue, label: "Lobby Power", lineWidth: 0, markerShape: MarkerShape.openDiamond);
         }
 
         public void SaveToFile(string path)
