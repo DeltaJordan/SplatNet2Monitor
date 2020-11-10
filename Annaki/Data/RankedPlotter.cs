@@ -76,7 +76,13 @@ namespace Annaki.Data
                     : MarkerShape.triDown;
 
                 this.plot.PlotPoint(xPoint, yPoint, markerShape: resultShape, color: resultColor);
-                this.plot.PlotText($" {sortedBattles[i].XPower}", xPoint, yPoint, resultColor);
+
+                if (i > 0)
+                {
+                    this.plot.PlotText(
+                        $" {Math.Abs((sortedBattles[i - 1].XPower - sortedBattles[i].XPower).GetValueOrDefault(0))}",
+                        xPoint, yPoint, resultColor);
+                }
             }
         }
 
