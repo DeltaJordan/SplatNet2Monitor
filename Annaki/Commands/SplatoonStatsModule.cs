@@ -50,30 +50,38 @@ namespace Annaki.Commands
         [Command("month")]
         public async Task PlotMonthBattles(CommandContext ctx, string mode)
         {
-            GameMode gameMode = Enum.Parse<GameMode>(mode);
-
-            if (gameMode == GameMode.TurfWar)
-                return;
-
-            string battlePath = Path.Combine(Globals.AppPath, "Battles");
-
-            List<SplatoonBattle> splatoonBattles = new List<SplatoonBattle>();
-
-            foreach (string file in Directory.EnumerateFiles(battlePath))
+            try
             {
-                SplatoonBattle battle = await SplatNetApiClient.ParseBattle(await File.ReadAllTextAsync(file));
+                GameMode gameMode = Enum.Parse<GameMode>(mode);
 
-                if (battle.LobbyType != LobbyType.Gachi && battle.Lobby != Lobby.Ranked)
-                    continue;
+                if (gameMode == GameMode.TurfWar)
+                    return;
 
-                if (battle.GameMode == gameMode)
+                string battlePath = Path.Combine(Globals.AppPath, "Battles");
+
+                List<SplatoonBattle> splatoonBattles = new List<SplatoonBattle>();
+
+                foreach (string file in Directory.EnumerateFiles(battlePath))
                 {
-                    if (battle.EndTime.Month == DateTime.Now.Month && battle.EndTime.Year == DateTime.Now.Year)
-                        splatoonBattles.Add(battle);
-                }
-            }
+                    SplatoonBattle battle = await SplatNetApiClient.ParseBattle(await File.ReadAllTextAsync(file));
 
-            await this.PlotBattles(ctx, gameMode.ToModeName(), splatoonBattles.ToArray());
+                    if (battle.LobbyType != LobbyType.Gachi && battle.Lobby != Lobby.Ranked)
+                        continue;
+
+                    if (battle.GameMode == gameMode)
+                    {
+                        if (battle.EndTime.Month == DateTime.Now.Month && battle.EndTime.Year == DateTime.Now.Year)
+                            splatoonBattles.Add(battle);
+                    }
+                }
+
+                await this.PlotBattles(ctx, gameMode.ToModeName(), splatoonBattles.ToArray());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         private async Task PlotBattles(CommandContext ctx, string gameMode, SplatoonBattle[] splatoonBattles)
