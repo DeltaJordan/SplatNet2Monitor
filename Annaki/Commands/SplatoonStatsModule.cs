@@ -65,7 +65,7 @@ namespace Annaki.Commands
                 {
                     SplatoonBattle battle = await SplatNetApiClient.ParseBattle(await File.ReadAllTextAsync(file));
 
-                    if (battle.LobbyType != LobbyType.Gachi && battle.Lobby != Lobby.Ranked)
+                    if (battle.LobbyType != LobbyType.Gachi && battle.Lobby != Lobby.Ranked || battle.XPower.GetValueOrDefault() == default)
                         continue;
 
                     if (battle.GameMode == gameMode)

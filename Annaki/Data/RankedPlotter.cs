@@ -64,7 +64,7 @@ namespace Annaki.Data
             double[] xPoints = enumerable.Select(x => (double) x.Index).ToArray();
             double[] yPoints = enumerable.Select(x => (double) x.Power.GetValueOrDefault(-1)).ToArray();
 
-            this.plot.PlotScatter(xPoints, yPoints, Color.Orange, markerShape: MarkerShape.none, label: "X Power After Match");
+            this.plot.PlotScatter(xPoints, yPoints, Color.White, markerShape: MarkerShape.none, label: "X Power After Match");
 
             for (int i = 0; i < xPoints.Length; i++)
             {
@@ -79,7 +79,7 @@ namespace Annaki.Data
 
                 if (i > 0 && this.battles[i - 1].XPower > 100)
                 {
-                    this.plot.PlotText($" {this.battles[i].XPower - this.battles[i - 1].XPower}", xPoint, yPoint, resultColor);
+                    this.plot.PlotText($" {this.battles[i].XPower}", xPoint, yPoint, resultColor);
                 }
             }
         }
