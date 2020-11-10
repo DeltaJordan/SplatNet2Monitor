@@ -38,10 +38,18 @@ namespace Annaki.Data
 
         public void PlotAll()
         {
+            decimal max = 3200;
+
+            decimal? power = this.battles.Select(x => x.XPower > x.LobbyPower ? x.XPower : x.LobbyPower).OrderByDescending(x => x).First();
+
+            max = power ?? max;
+
+            max = Math.Round(max / 100, MidpointRounding.AwayFromZero) * 100;
+
             this.plot.Clear();
             this.PlotBattles();
             this.PlotLobbyAverages();
-            this.plot.Axis(y1: 1900, y2: 3200);
+            this.plot.Axis(y1: 1900, y2: (double) max);
             this.plot.Grid(xSpacing: 1, ySpacing: 50);
             this.plot.Legend();
         }
