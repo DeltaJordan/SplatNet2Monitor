@@ -86,6 +86,11 @@ namespace Annaki.Data
                         xPoint, yPoint + textOffset, resultColor, alignment: TextAlignment.middleCenter);
                 }
             }
+
+            decimal sessionDelta = (sortedBattles.Last().XPower - sortedBattles.First().XPower).GetValueOrDefault(0);
+            Color deltaColor = sessionDelta > 0 ? Color.Green : Color.Red;
+
+            this.plot.PlotAnnotation($"Session Δ{Math.Abs(sessionDelta)}", -10, fontColor: deltaColor, shadow: true);
         }
 
         public void PlotLobbyAverages()
