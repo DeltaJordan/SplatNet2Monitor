@@ -75,13 +75,15 @@ namespace Annaki.Data
                     ? MarkerShape.triUp
                     : MarkerShape.triDown;
 
+                int textOffset = sortedBattles[i].Result == BattleResult.Victory ? 10 : -10;
+
                 this.plot.PlotPoint(xPoint, yPoint, markerShape: resultShape, color: resultColor);
 
                 if (i > 0)
                 {
                     this.plot.PlotText(
-                        $" {Math.Abs((sortedBattles[i - 1].XPower - sortedBattles[i].XPower).GetValueOrDefault(0))}",
-                        xPoint, yPoint, resultColor);
+                        $"{Math.Abs((sortedBattles[i - 1].XPower - sortedBattles[i].XPower).GetValueOrDefault(0))}",
+                        xPoint, yPoint + textOffset, resultColor, alignment: TextAlignment.middleCenter);
                 }
             }
         }
