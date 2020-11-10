@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using ScottPlot;
+using SplatNet2.Net.Api.Data;
 using SplatNet2.Net.Api.Data.Battles;
 
 namespace Annaki.Data
@@ -52,6 +53,7 @@ namespace Annaki.Data
             this.plot.Axis(y1: 1900, y2: (double) max);
             this.plot.Grid(xSpacing: 1, ySpacing: 50);
             this.plot.Legend();
+            this.plot.Style(Style.Black);
         }
 
         public void PlotBattles()
@@ -62,7 +64,24 @@ namespace Annaki.Data
             double[] xPoints = enumerable.Select(x => (double) x.Index).ToArray();
             double[] yPoints = enumerable.Select(x => (double) x.Power.GetValueOrDefault(-1)).ToArray();
 
-            this.plot.PlotScatter(xPoints, yPoints, Color.OrangeRed, label: "X Power After Match");
+            this.plot.PlotScatter(xPoints, yPoints, Color.Orange, markerShape: MarkerShape.none, label: "X Power After Match");
+
+            for (int i = 0; i < xPoints.Length; i++)
+            {
+                double xPoint = xPoints[i];
+                double yPoint = yPoints[i];
+                Color resultColor = this.battles[i].Result == BattleResult.Victory ? Color.Green : Color.Red;
+                MarkerShape resultShape = this.battles[i].Result == BattleResult.Victory
+                    ? MarkerShape.triUp
+                    : MarkerShape.triDown;
+
+                this.plot.PlotPoint(xPoint, yPoint, markerShape: resultShape, color: resultColor);
+
+                if (i > 0 && this.battles[i - 1].XPower > 100)
+                {
+                    this.plot.PlotText($" {this.battles[i].XPower - this.battles[i - 1].XPower}", xPoint, yPoint, resultColor);
+                }
+            }
         }
 
         public void PlotLobbyAverages()
