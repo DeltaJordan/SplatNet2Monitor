@@ -58,8 +58,8 @@ namespace Annaki.Data
 
         public void PlotBattles()
         {
-            var enumerable = this.battles.OrderBy(x => x.BattleNumber)
-                .Select((x, y) => new {Index = y, Power = x.XPower}).ToArray();
+            List<SplatoonBattle> sortedBattles = this.battles.OrderBy(x => x.BattleNumber).ToList();
+            var enumerable = sortedBattles.Select((x, y) => new {Index = y, Power = x.XPower}).ToArray();
 
             double[] xPoints = enumerable.Select(x => (double) x.Index).ToArray();
             double[] yPoints = enumerable.Select(x => (double) x.Power.GetValueOrDefault(-1)).ToArray();
@@ -70,17 +70,13 @@ namespace Annaki.Data
             {
                 double xPoint = xPoints[i];
                 double yPoint = yPoints[i];
-                Color resultColor = this.battles[i].Result == BattleResult.Victory ? Color.Green : Color.Red;
-                MarkerShape resultShape = this.battles[i].Result == BattleResult.Victory
+                Color resultColor = sortedBattles[i].Result == BattleResult.Victory ? Color.Green : Color.Red;
+                MarkerShape resultShape = sortedBattles[i].Result == BattleResult.Victory
                     ? MarkerShape.triUp
                     : MarkerShape.triDown;
 
                 this.plot.PlotPoint(xPoint, yPoint, markerShape: resultShape, color: resultColor);
-
-                if (i > 0 && this.battles[i - 1].XPower > 100)
-                {
-                    this.plot.PlotText($" {this.battles[i].XPower}", xPoint, yPoint, resultColor);
-                }
+                this.plot.PlotText($" {sortedBattles[i].XPower}", xPoint, yPoint, resultColor);
             }
         }
 
