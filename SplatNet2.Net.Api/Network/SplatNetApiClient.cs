@@ -465,6 +465,7 @@ namespace SplatNet2.Net.Api.Network
                         BrandName = token["player"]["head"]["brand"]["name"].Value<string>(),
                         HeadgearId = token["player"]["head"]["id"].Value<int>(),
                         Name = token["player"]["head"]["name"].Value<string>(),
+                        ImageUrl = $"https://app.splatoon2.nintendo.net/{token["player"]["head"]["image"].Value<string>()}",
                         MainAbility = (GearEnums.Ability)token["player"]["head_skills"]["main"]["id"].Value<int>(),
                         SecondaryAbilities = ParseSubAbilities(token["player"]["head_skills"]["subs"].Children())
                     },
@@ -473,6 +474,7 @@ namespace SplatNet2.Net.Api.Network
                         BrandName = token["player"]["clothes"]["brand"]["name"].Value<string>(),
                         ClothingId = token["player"]["clothes"]["id"].Value<int>(),
                         Name = token["player"]["clothes"]["name"].Value<string>(),
+                        ImageUrl = $"https://app.splatoon2.nintendo.net/{token["player"]["clothes"]["image"].Value<string>()}",
                         MainAbility = (GearEnums.Ability)token["player"]["clothes_skills"]["main"]["id"].Value<int>(),
                         SecondaryAbilities = ParseSubAbilities(token["player"]["clothes_skills"]["subs"].Children())
                     },
@@ -481,6 +483,7 @@ namespace SplatNet2.Net.Api.Network
                         BrandName = token["player"]["shoes"]["brand"]["name"].Value<string>(),
                         ShoeId = token["player"]["shoes"]["id"].Value<int>(),
                         Name = token["player"]["shoes"]["name"].Value<string>(),
+                        ImageUrl = $"https://app.splatoon2.nintendo.net/{token["player"]["shoes"]["image"].Value<string>()}",
                         MainAbility = (GearEnums.Ability)token["player"]["shoes_skills"]["main"]["id"].Value<int>(),
                         SecondaryAbilities = ParseSubAbilities(token["player"]["shoes_skills"]["subs"].Children())
                     }

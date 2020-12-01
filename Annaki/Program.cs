@@ -309,54 +309,78 @@ namespace Annaki
         {
             DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
 
-            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-            {
-                Title = "Headgear found."
-            };
+            List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
 
             foreach (SplatoonPlayer player in e)
             {
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
+                {
+                    Title = "Headgear Found.",
+                    ThumbnailUrl = player.Gear.Headgear.ImageUrl
+                };
+
                 embedBuilder.AddField(player.Name, 
                     $"{player.Gear.Headgear.Name} - {player.Gear.Headgear.MainAbility}");
+
+                gearBuilders.Add(embedBuilder);
             }
 
-            await dmChannel.SendMessageAsync(embed:embedBuilder.Build());
+            foreach (DiscordEmbedBuilder embedBuilder in gearBuilders)
+            {
+                await dmChannel.SendMessageAsync(embed:embedBuilder.Build());
+            }
         }
 
         private static async void BattleMonitor_ClothingFound(object sender, SplatoonPlayer[] e)
         {
-            DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
-
-            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-            {
-                Title = "Clothing found."
-            };
+            DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner); 
+            
+            List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
 
             foreach (SplatoonPlayer player in e)
             {
-                embedBuilder.AddField(player.Name, 
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
+                {
+                    Title = "Clothing Found.",
+                    ThumbnailUrl = player.Gear.Clothing.ImageUrl
+                };
+
+                embedBuilder.AddField(player.Name,
                     $"{player.Gear.Clothing.Name} - {player.Gear.Clothing.MainAbility}");
+
+                gearBuilders.Add(embedBuilder);
             }
 
-            await dmChannel.SendMessageAsync(embed: embedBuilder.Build());
+            foreach (DiscordEmbedBuilder embedBuilder in gearBuilders)
+            {
+                await dmChannel.SendMessageAsync(embed: embedBuilder.Build());
+            }
         }
 
         private static async void BattleMonitor_ShoesFound(object sender, SplatoonPlayer[] e)
         {
             DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
 
-            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-            {
-                Title = "Shoes found."
-            };
+            List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
 
             foreach (SplatoonPlayer player in e)
             {
-                embedBuilder.AddField(player.Name, 
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
+                {
+                    Title = "Feet Found.",
+                    ThumbnailUrl = player.Gear.Shoes.ImageUrl
+                };
+
+                embedBuilder.AddField(player.Name,
                     $"{player.Gear.Shoes.Name} - {player.Gear.Shoes.MainAbility}");
+
+                gearBuilders.Add(embedBuilder);
             }
 
-            await dmChannel.SendMessageAsync(embed: embedBuilder.Build());
+            foreach (DiscordEmbedBuilder embedBuilder in gearBuilders)
+            {
+                await dmChannel.SendMessageAsync(embed: embedBuilder.Build());
+            }
         }
     }
 }

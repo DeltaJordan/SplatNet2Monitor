@@ -41,7 +41,9 @@ namespace Annaki.Data
         {
             decimal max = 3200;
 
-            decimal? power = this.battles.Select(x => x.XPower > x.LobbyPower ? x.XPower : x.LobbyPower).OrderByDescending(x => x).First();
+
+            decimal? power = this.battles.Select(x => x.XPower > x.LobbyPower ? x.XPower : x.LobbyPower)
+                .Where(x => x.HasValue).OrderByDescending(x => x).First();
 
             max = power ?? max;
 

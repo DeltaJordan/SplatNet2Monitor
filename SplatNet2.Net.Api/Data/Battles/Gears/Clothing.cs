@@ -12,6 +12,8 @@ namespace SplatNet2.Net.Api.Data.Battles.Gears
 
         public string Name { get; set; }
 
+        public string ImageUrl { get; set; }
+
         public GearEnums.Ability MainAbility { get; set; }
 
         public GearEnums.Ability[] SecondaryAbilities { get; set; }
