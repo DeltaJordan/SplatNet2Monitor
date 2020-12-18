@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -30,9 +31,11 @@ namespace Annaki
         public static DiscordClient Client;
         public static BattleMonitor BattleMonitor;
 
+        private static Timer merchTimer;
+
         private static TwitchAPI twitchApi;
 
-        private static CommandsNextModule commands;
+        private static CommandsNextExtension commands;
 
         private static readonly Logger ClassLogger = LogManager.GetCurrentClassLogger();
         private static readonly Logger DiscordLogger = LogManager.GetLogger("Discord API");
@@ -90,15 +93,16 @@ namespace Annaki
 
             Client = new DiscordClient(new DiscordConfiguration
             {
+                ReconnectIndefinitely = true,
+                AutoReconnect = true,
                 Token = Globals.BotSettings.BotToken,
                 TokenType = TokenType.Bot,
-                UseInternalLogHandler = true,
-                LogLevel = DSharpPlus.LogLevel.Debug
+                MinimumLogLevel = Microsoft.Extensions.Logging.LogLevel.Debug 
             });
 
             commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefix = Globals.BotSettings.Prefix,
+                StringPrefixes = new []{ Globals.BotSettings.Prefix },
                 CaseSensitive = false
             });
 
@@ -116,47 +120,58 @@ namespace Annaki
             liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
             liveStreamMonitorService.Start();
 
+
+
             await StartMonitor();
         }
 
         private static async void LiveStreamMonitorService_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
+            if (Globals.BotSettings.StreamNotificationChannelId == 0)
+                return;
+
+            User user = await twitchApi.V5.Users.GetUserByIDAsync(e.Stream.UserId);
+
+            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
+            {
+                Title = e.Stream.Title,
+                Url = $"https://www.twitch.tv/{user.Name}",
+                ImageUrl =
+                    $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg?rnd={new Random().Next()}",
+                Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
+                {
+                    Width = 270,
+                    Height = 270,
+                    Url = user.Logo
+                },
+                Color = new DiscordColor(100, 65, 165)
+            };
+
+            embedBuilder.WithAuthor(user.DisplayName);
+
             try
             {
-                if (Globals.BotSettings.StreamNotificationChannelId == 0)
-                    return;
-
-                User user = await twitchApi.V5.Users.GetUserByIDAsync(e.Stream.UserId);
-
-                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-                {
-                    Title = e.Stream.Title,
-                    Url = $"https://www.twitch.tv/{user.Name}",
-                    ImageUrl = $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg?rnd={e.Stream.Id}",
-                    ThumbnailUrl = user.Logo,
-                    Color = new DiscordColor(100, 65, 165)
-                };
-
-                embedBuilder.WithAuthor(user.DisplayName);
-
-                GetGamesResponse gamesResponse = await twitchApi.Helix.Games.GetGamesAsync(new List<string> {e.Stream.GameId});
+                GetGamesResponse gamesResponse =
+                    await twitchApi.Helix.Games.GetGamesAsync(new List<string> {e.Stream.GameId});
                 Game streamingGame = gamesResponse.Games.First();
 
                 embedBuilder.WithFooter($"Playing: {streamingGame.Name}", streamingGame.BoxArtUrl);
-
-                DiscordChannel notificationChannel = await Client.GetChannelAsync(Globals.BotSettings.StreamNotificationChannelId);
-                DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
-                    string.Equals(x.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase));
-
-                if (notificationRole == null)
-                    return;
-
-                await notificationChannel.SendMessageAsync($"{notificationRole.Mention} DeltaJordan is live!", embed: embedBuilder.Build());
             }
-            catch (Exception exception)
+            catch
             {
-                Console.WriteLine(exception);
+                embedBuilder.WithTimestamp(DateTimeOffset.Now);
             }
+
+            DiscordChannel notificationChannel =
+                await Client.GetChannelAsync(Globals.BotSettings.StreamNotificationChannelId);
+            DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
+                string.Equals(x.Value.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase)).Value;
+
+            if (notificationRole == null)
+                return;
+
+            await notificationChannel.SendMessageAsync($"{notificationRole.Mention} DeltaJordan is live!",
+                embed: embedBuilder.Build());
         }
 
         private static async Task StartMonitor()
@@ -215,7 +230,7 @@ namespace Annaki
 
         private static async void BattleMonitor_ExceptionOccured(object sender, (bool stopped, Exception exception) e)
         {
-            DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
+            DiscordDmChannel dmChannel = await ((DiscordMember) Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
 
             List<string> errorChunks = new List<string>();
 
@@ -266,7 +281,7 @@ namespace Annaki
 
         private static async void BattleMonitor_CookieExpired(object sender, Exception e)
         {
-            DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
+            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
 
             await dmChannel.SendMessageAsync(
                 "The cookie has expired. No further battles can be saved until this issue is resolved.");
@@ -307,7 +322,7 @@ namespace Annaki
 
         private static async void BattleMonitor_HeadgearFound(object sender, SplatoonPlayer[] e)
         {
-            DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
+            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
 
             List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
 
@@ -316,7 +331,7 @@ namespace Annaki
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
                 {
                     Title = "Headgear Found.",
-                    ThumbnailUrl = player.Gear.Headgear.ImageUrl
+                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = player.Gear.Headgear.ImageUrl }
                 };
 
                 embedBuilder.AddField(player.Name, 
@@ -333,7 +348,7 @@ namespace Annaki
 
         private static async void BattleMonitor_ClothingFound(object sender, SplatoonPlayer[] e)
         {
-            DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner); 
+            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync(); 
             
             List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
 
@@ -342,7 +357,7 @@ namespace Annaki
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
                 {
                     Title = "Clothing Found.",
-                    ThumbnailUrl = player.Gear.Clothing.ImageUrl
+                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = player.Gear.Clothing.ImageUrl }
                 };
 
                 embedBuilder.AddField(player.Name,
@@ -359,7 +374,7 @@ namespace Annaki
 
         private static async void BattleMonitor_ShoesFound(object sender, SplatoonPlayer[] e)
         {
-            DiscordDmChannel dmChannel = await Client.CreateDmAsync(Client.CurrentApplication.Owner);
+            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
 
             List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
 
@@ -368,7 +383,7 @@ namespace Annaki
                 DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
                 {
                     Title = "Feet Found.",
-                    ThumbnailUrl = player.Gear.Shoes.ImageUrl
+                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = player.Gear.Shoes.ImageUrl }
                 };
 
                 embedBuilder.AddField(player.Name,

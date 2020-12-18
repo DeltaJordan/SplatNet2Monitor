@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace Annaki.Commands
 {
-    public class StreamModule : BaseModule
+    public class StreamModule : BaseExtension
     {
         [Command("bind-stream"), RequireOwner]
         public async Task BindStream(CommandContext ctx)
@@ -31,7 +31,7 @@ namespace Annaki.Commands
         public async Task ToggleNotifications(CommandContext ctx)
         {
             DiscordRole notificationRole = ctx.Guild.Roles.FirstOrDefault(x =>
-                string.Equals(x.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase));
+                string.Equals(x.Value.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase)).Value;
 
             if (notificationRole == null)
                 return;

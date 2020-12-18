@@ -16,7 +16,7 @@ using SplatNet2.Net.Monitor.Workers;
 namespace Annaki.Commands
 {
     [Group("plot"), RequireOwner]
-    public class SplatoonStatsModule : BaseModule
+    public class SplatoonStatsModule : BaseExtension
     {
         [Command("day")]
         public async Task PlotDayBattles(CommandContext ctx, string mode)

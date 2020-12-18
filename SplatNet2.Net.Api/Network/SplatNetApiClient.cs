@@ -112,6 +112,15 @@ namespace SplatNet2.Net.Api.Network
             return JObject.Parse(await responseMessage.Content.ReadAsStringAsync());
         }
 
+        private static async Task<JObject> RetrieveMerchJson()
+        {
+            const string url = "https://app.splatoon2.nintendo.net/api/onlineshop/merchandises";
+
+            HttpResponseMessage responseMessage = await httpClient.GetAsync(url);
+
+            return JObject.Parse(await responseMessage.Content.ReadAsStringAsync());
+        }
+
         public static async Task<SplatoonBattle> ParseBattle(string scoreboardJson)
         {
             JObject scoreboardJObject;

@@ -13,9 +13,16 @@ using SplatNet2.Net.Api.Data;
 
 namespace Annaki.Commands
 {
-    public class GearModule : BaseModule
+    public class GearModule : BaseExtension
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        [Command("merch")]
+        public async Task MerchMonitor(CommandContext ctx)
+        {
+            Globals.BotSettings.SplatNetGearChannelId = ctx.Channel.Id;
+            Globals.BotSettings.SaveSettings();
+        }
 
         [Command("remove"), RequireOwner]
         public async Task Remove(CommandContext ctx, string gearName, string mainAbility)
@@ -54,7 +61,7 @@ namespace Annaki.Commands
 
                 await ctx.RespondAsync(
                     $"Now monitoring for all {gearName.Split('-')[1]} with the ability {ability} (Sorry for the weird formatting). " +
-                    $"{ctx.Client.CurrentApplication.Owner.Mention} will notify you if the gear is found.");
+                    $"{ctx.Client.CurrentApplication.Owners.First().Mention} will notify you if the gear is found.");
                 return;
             }
 
@@ -162,7 +169,7 @@ namespace Annaki.Commands
                     return;
                 }
 
-                if (ctx.User.Id != ctx.Client.CurrentApplication.Owner.Id)
+                if (ctx.User.Id != ctx.Client.CurrentApplication.Owners.First().Id)
                 {
                     if (gearName.StartsWith("any"))
                     {
@@ -188,7 +195,7 @@ namespace Annaki.Commands
 
                     await ctx.RespondAsync(
                         $"Now monitoring for all {gearName.Split('-')[1]} with the ability {ability} (Sorry for the weird formatting). " +
-                        $"{ctx.Client.CurrentApplication.Owner.Mention} will notify you if the gear is found.");
+                        $"{ctx.Client.CurrentApplication.Owners.First().Mention} will notify you if the gear is found.");
                     return;
                 }
 
@@ -274,7 +281,7 @@ namespace Annaki.Commands
 
                 await ctx.RespondAsync(
                     $"Now monitoring for {foundGear.First()} with the ability {ability} (Sorry for the weird formatting). " +
-                    $"{ctx.Client.CurrentApplication.Owner.Mention} will notify you if the gear is found.");
+                    $"{ctx.Client.CurrentApplication.Owners.First().Mention} will notify you if the gear is found.");
             }
             catch (Exception e)
             {

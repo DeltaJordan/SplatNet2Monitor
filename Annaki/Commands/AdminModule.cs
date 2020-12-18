@@ -8,7 +8,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace Annaki.Commands
 {
-    public class AdminModule : BaseModule
+    public class AdminModule : BaseExtension
     {
         [Command("reset")]
         public async Task Reset(CommandContext ctx)

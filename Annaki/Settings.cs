@@ -17,6 +17,9 @@ namespace Annaki
         [JsonProperty("notification_id")] 
         public ulong StreamNotificationChannelId { get; set; }
 
+        [JsonProperty("splatnet_channel_id")]
+        public ulong SplatNetGearChannelId { get; set; }
+
         [JsonProperty("twitch_token")]
         public string TwitchSecret { get; set; }
 
