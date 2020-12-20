@@ -25,6 +25,7 @@ namespace SplatNet2.Net.Api.Network
         private static readonly HttpClient httpClient;
 
         private string version = "unknown";
+        private string authCodeVerifier;
 
         static SplatnetAuthClient()
         {
@@ -39,15 +40,15 @@ namespace SplatNet2.Net.Api.Network
             httpClient = new HttpClient(loggingHandler);
         }
 
-        public async Task<string> LogIn(string version)
+        public async Task<string> GetLoginLink()
         {
             string authState = Base64UrlEncoder.Encode(this.random.GenerateRandomBytes(36));
 
-            string authCodeVerifier = Base64UrlEncoder.Encode(this.random.GenerateRandomBytes(32)).Replace("=", "");
+            this.authCodeVerifier = Base64UrlEncoder.Encode(this.random.GenerateRandomBytes(32)).Replace("=", "");
 
             using SHA256 hash = SHA256.Create();
             Encoding enc = Encoding.UTF8;
-            byte[] hashArray = hash.ComputeHash(enc.GetBytes(authCodeVerifier));
+            byte[] hashArray = hash.ComputeHash(enc.GetBytes(this.authCodeVerifier));
 
             string authCodeChallenge = Base64UrlEncoder.Encode(hashArray).Replace("=", "");
 
@@ -95,32 +96,24 @@ namespace SplatNet2.Net.Api.Network
 
             await httpClient.SendAsync(requestMessage);
 
-            string postLogin = requestUri.AbsoluteUri;
+            return requestUri.AbsoluteUri;
+        }
 
-            Console.WriteLine("\nMake sure you have fully read the \"Cookie generation\" section of the readme before proceeding. To manually input a cookie instead, enter \"skip\" at the prompt below.");
-            Console.WriteLine("\nNavigate to this URL in your browser:");
-            Console.WriteLine(postLogin);
-            Console.WriteLine("Log in, right click the \"Select this account\" button, copy the link address, and paste it below:");
-
-            while (true)
+        public async Task<string> LogIn(string accountUrl)
+        {
+            try
             {
-                try
-                {
-                    string useAccountUrl = Console.ReadLine();
-                    if (string.IsNullOrWhiteSpace(useAccountUrl) || useAccountUrl.ToLower() == "skip")
-                        return "skip";
-                    string sessionTokenCode = Regex.Match(useAccountUrl, "de=(.*)&").Groups[1].Value;
-                    return await this.GetSessionToken(sessionTokenCode, authCodeVerifier);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
+                string sessionTokenCode = Regex.Match(accountUrl, "de=(.*)&").Groups[1].Value;
+                return await this.GetSessionToken(sessionTokenCode);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
             }
         }
 
-        public async Task<string> GetSessionToken(string sessionTokenCode, string authCodeVerifier)
+        public async Task<string> GetSessionToken(string sessionTokenCode)
         {
             httpClient.DefaultRequestHeaders.Clear();
 
@@ -135,7 +128,7 @@ namespace SplatNet2.Net.Api.Network
             {
                 ["client_id"] = "71b963c1b7b6d119",
                 ["session_token_code"] = sessionTokenCode,
-                ["session_token_code_verifier"] = authCodeVerifier
+                ["session_token_code_verifier"] = this.authCodeVerifier
             };
 
             const string url = "https://accounts.nintendo.com/connect/1.0.0/api/session_token";

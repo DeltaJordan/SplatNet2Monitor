@@ -11,6 +11,7 @@ using SplatNet2.Net.Api;
 using SplatNet2.Net.Api.Data;
 using SplatNet2.Net.Api.Data.Battles;
 using SplatNet2.Net.Api.Data.Battles.Gears;
+using SplatNet2.Net.Api.Exceptions;
 using SplatNet2.Net.Api.Network;
 using SplatNet2.Net.Api.Network.Data;
 
@@ -23,7 +24,7 @@ namespace SplatNet2.Net.Monitor.Workers
         public event EventHandler<SplatoonPlayer[]> ShoesFound;
         public event EventHandler<Dictionary<int, string>> BattlesRetrieved;
         public event EventHandler<SplatnetCookie> CookieRefreshed;
-        public event EventHandler<Exception> CookieExpired;
+        public event EventHandler<ExpiredCookieException> CookieExpired;
         public event EventHandler<(bool stopped, Exception exception)> ExceptionOccured;
 
         private readonly List<Headgear> lookingForHeadGears = new List<Headgear>();
@@ -36,6 +37,9 @@ namespace SplatNet2.Net.Monitor.Workers
 
         private readonly List<int> readBattleNumbers = new List<int>();
 
+        private bool needsAuth;
+        private SplatnetAuthClient authClient;
+
         private int genericErrorCount;
 
         public BattleMonitor(params int[] readBattleNumbers)
@@ -46,17 +50,53 @@ namespace SplatNet2.Net.Monitor.Workers
 
         public async Task InitializeAsync(SplatnetCookie splatnetCookie)
         {
-            this.iksmCookie = splatnetCookie?.Cookie ?? (await this.AuthenticateCookie()).Cookie;
+            this.iksmCookie = splatnetCookie?.Cookie;
 
             SplatNetApiClient.ApplyIksmCookie(this.iksmCookie);
         }
 
-        private async Task<SplatnetCookie> AuthenticateCookie()
+        public async Task<bool> RefreshCookie(string accountUrl)
         {
-            SplatnetAuthClient splatnetClient = new SplatnetAuthClient();
+            try
+            {
+                this.iksmCookie = (await this.AuthenticateCookie(accountUrl)).Cookie;
+                SplatNetApiClient.ApplyIksmCookie(this.iksmCookie);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
 
-            string sessionToken = await splatnetClient.LogIn(A_VERSION);
-            SplatnetCookie splatnetCookie = await splatnetClient.GetCookie(sessionToken, A_VERSION);
+                return false;
+            }
+
+            this.needsAuth = false;
+
+            return true;
+        }
+
+        private async Task HandleAuthError(ExpiredCookieException ex)
+        {
+            this.needsAuth = true;
+
+            this.authClient = new SplatnetAuthClient();
+
+            if (ex.ReAuthUrl == null)
+            {
+                ex = new ExpiredCookieException(ex.Message, await this.GetLoginLink());
+            }
+
+            this.CookieExpired?.Invoke(this, ex);
+        }
+
+        private async Task<string> GetLoginLink()
+        {
+            return await this.authClient.GetLoginLink();
+        }
+
+        private async Task<SplatnetCookie> AuthenticateCookie(string accountUrl)
+        {
+            string sessionToken = await this.authClient.LogIn(accountUrl);
+            SplatnetCookie splatnetCookie = await this.authClient.GetCookie(sessionToken, A_VERSION);
 
             this.CookieRefreshed?.Invoke(this, splatnetCookie);
 
@@ -117,7 +157,7 @@ namespace SplatNet2.Net.Monitor.Workers
         {
             while (true)
             {
-                if (this.genericErrorCount >= 3)
+                if (this.genericErrorCount >= 3 || this.needsAuth)
                 {
                     continue;
                 }
@@ -128,15 +168,11 @@ namespace SplatNet2.Net.Monitor.Workers
                 {
                     battles = await SplatNetApiClient.RetrieveBattles(this.readBattleNumbers.ToArray());
                 }
-                catch (AuthenticationException ex)
+                catch (ExpiredCookieException ex)
                 {
-                    this.CookieExpired?.Invoke(this, ex);
+                    await this.HandleAuthError(ex);
 
-                    Console.WriteLine("Cookie is invalid. Please follow the steps to create a new cookie.");
-
-                    SplatNetApiClient.ApplyIksmCookie((await AuthenticateCookie()).Cookie);
-
-                    battles = await SplatNetApiClient.RetrieveBattles(this.readBattleNumbers.ToArray());
+                    continue;
                 }
                 catch (Exception ex)
                 {

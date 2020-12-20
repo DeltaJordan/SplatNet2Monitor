@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Annaki.Events.Workers;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
@@ -36,9 +37,6 @@ namespace Annaki
         private static TwitchAPI twitchApi;
 
         private static CommandsNextExtension commands;
-
-        private static readonly Logger ClassLogger = LogManager.GetCurrentClassLogger();
-        private static readonly Logger DiscordLogger = LogManager.GetLogger("Discord API");
 
         public static async Task Main(string[] args)
         {
@@ -120,8 +118,6 @@ namespace Annaki
             liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
             liveStreamMonitorService.Start();
 
-
-
             await StartMonitor();
         }
 
@@ -191,13 +187,13 @@ namespace Annaki
 
             BattleMonitor = new BattleMonitor(Globals.BotSettings.ReadBattleNumbers);
 
-            BattleMonitor.ShoesFound += BattleMonitor_ShoesFound;
-            BattleMonitor.ClothingFound += BattleMonitor_ClothingFound;
-            BattleMonitor.HeadgearFound += BattleMonitor_HeadgearFound;
-            BattleMonitor.CookieRefreshed += BattleMonitor_CookieRefreshed;
-            BattleMonitor.BattlesRetrieved += BattleMonitor_BattlesRetrieved;
-            BattleMonitor.CookieExpired += BattleMonitor_CookieExpired;
-            BattleMonitor.ExceptionOccured += BattleMonitor_ExceptionOccured;
+            BattleMonitor.ShoesFound += BattleMonitorEventWorker.BattleMonitor_ShoesFound;
+            BattleMonitor.ClothingFound += BattleMonitorEventWorker.BattleMonitor_ClothingFound;
+            BattleMonitor.HeadgearFound += BattleMonitorEventWorker.BattleMonitor_HeadgearFound;
+            BattleMonitor.CookieRefreshed += BattleMonitorEventWorker.BattleMonitor_CookieRefreshed;
+            BattleMonitor.BattlesRetrieved += BattleMonitorEventWorker.BattleMonitor_BattlesRetrieved;
+            BattleMonitor.CookieExpired += ExceptionEventWorker.BattleMonitor_CookieExpired;
+            BattleMonitor.ExceptionOccured += ExceptionEventWorker.BattleMonitor_ExceptionOccured;
 
             if (Globals.BotSettings.WatchedHeadgear != null)
             {
@@ -226,176 +222,6 @@ namespace Annaki
             await BattleMonitor.InitializeAsync(splatnetCookie);
 
             await BattleMonitor.BeginMonitor();
-        }
-
-        private static async void BattleMonitor_ExceptionOccured(object sender, (bool stopped, Exception exception) e)
-        {
-            DiscordDmChannel dmChannel = await ((DiscordMember) Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
-
-            List<string> errorChunks = new List<string>();
-
-            using StringReader stringReader = new StringReader(e.exception.ToString());
-
-            string readLine;
-            string currentChunk = string.Empty;
-
-            while ((readLine = await stringReader.ReadLineAsync()) != null)
-            {
-                readLine += "\n";
-
-                if (currentChunk.Length + readLine.Length > 2000)
-                {
-                    errorChunks.Add(currentChunk);
-
-                    currentChunk = readLine;
-
-                    continue;
-                }
-
-                currentChunk += readLine;
-            }
-
-            errorChunks.Add(currentChunk);
-
-            if (e.stopped)
-            {
-                await dmChannel.SendMessageAsync(
-                    "Too many errors have occured. To reset the bot's error count, run `a.reset`, preferably after fixing any issues.");
-
-                foreach (string errorChunk in errorChunks)
-                {
-                    await dmChannel.SendMessageAsync(errorChunk);
-                }
-            }
-            else
-            {
-                await dmChannel.SendMessageAsync(
-                    "An error has occured. The exception count has increased by one.");
-
-                foreach (string errorChunk in errorChunks)
-                {
-                    await dmChannel.SendMessageAsync(errorChunk);
-                }
-            }
-        }
-
-        private static async void BattleMonitor_CookieExpired(object sender, Exception e)
-        {
-            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
-
-            await dmChannel.SendMessageAsync(
-                "The cookie has expired. No further battles can be saved until this issue is resolved.");
-
-            await dmChannel.SendMessageAsync(e.ToString());
-        }
-
-        private static void BattleMonitor_BattlesRetrieved(object sender, Dictionary<int, string> e)
-        {
-            foreach ((int battleNumber, string battleJson) in e)
-            {
-                string battleDirectory = Directory.CreateDirectory(Path.Combine(Globals.AppPath, "Battles")).FullName;
-
-                File.WriteAllText(Path.Combine(battleDirectory, $"Battle #{battleNumber}"), battleJson);
-            }
-
-            if (Globals.BotSettings.ReadBattleNumbers == null)
-            {
-                Globals.BotSettings.ReadBattleNumbers = e.Keys.ToArray();
-            }
-            else
-            {
-                Globals.BotSettings.ReadBattleNumbers = Globals.BotSettings.ReadBattleNumbers.Concat(e.Keys).ToArray();
-            }
-
-            Globals.BotSettings.SaveSettings();
-
-            ClassLogger.Info($"Saved {e.Count} battles (#{e.Keys.OrderBy(x => x).First()}-#{e.Keys.OrderBy(x => x).Last()}).");
-        }
-
-        private static void BattleMonitor_CookieRefreshed(object sender, SplatnetCookie e)
-        {
-            Globals.BotSettings.Cookie = e;
-            Globals.BotSettings.SaveSettings();
-
-            ClassLogger.Info("Cookie has been refreshed and updated successfully.");
-        }
-
-        private static async void BattleMonitor_HeadgearFound(object sender, SplatoonPlayer[] e)
-        {
-            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
-
-            List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
-
-            foreach (SplatoonPlayer player in e)
-            {
-                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-                {
-                    Title = "Headgear Found.",
-                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = player.Gear.Headgear.ImageUrl }
-                };
-
-                embedBuilder.AddField(player.Name, 
-                    $"{player.Gear.Headgear.Name} - {player.Gear.Headgear.MainAbility}");
-
-                gearBuilders.Add(embedBuilder);
-            }
-
-            foreach (DiscordEmbedBuilder embedBuilder in gearBuilders)
-            {
-                await dmChannel.SendMessageAsync(embed:embedBuilder.Build());
-            }
-        }
-
-        private static async void BattleMonitor_ClothingFound(object sender, SplatoonPlayer[] e)
-        {
-            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync(); 
-            
-            List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
-
-            foreach (SplatoonPlayer player in e)
-            {
-                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-                {
-                    Title = "Clothing Found.",
-                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = player.Gear.Clothing.ImageUrl }
-                };
-
-                embedBuilder.AddField(player.Name,
-                    $"{player.Gear.Clothing.Name} - {player.Gear.Clothing.MainAbility}");
-
-                gearBuilders.Add(embedBuilder);
-            }
-
-            foreach (DiscordEmbedBuilder embedBuilder in gearBuilders)
-            {
-                await dmChannel.SendMessageAsync(embed: embedBuilder.Build());
-            }
-        }
-
-        private static async void BattleMonitor_ShoesFound(object sender, SplatoonPlayer[] e)
-        {
-            DiscordDmChannel dmChannel = await ((DiscordMember)Client.CurrentApplication.Owners.First()).CreateDmChannelAsync();
-
-            List<DiscordEmbedBuilder> gearBuilders = new List<DiscordEmbedBuilder>();
-
-            foreach (SplatoonPlayer player in e)
-            {
-                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-                {
-                    Title = "Feet Found.",
-                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail { Url = player.Gear.Shoes.ImageUrl }
-                };
-
-                embedBuilder.AddField(player.Name,
-                    $"{player.Gear.Shoes.Name} - {player.Gear.Shoes.MainAbility}");
-
-                gearBuilders.Add(embedBuilder);
-            }
-
-            foreach (DiscordEmbedBuilder embedBuilder in gearBuilders)
-            {
-                await dmChannel.SendMessageAsync(embed: embedBuilder.Build());
-            }
         }
     }
 }

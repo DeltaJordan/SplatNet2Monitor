@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using SplatNet2.Net.Api.Data;
 using SplatNet2.Net.Api.Data.Battles;
 using SplatNet2.Net.Api.Data.Battles.Gears;
+using SplatNet2.Net.Api.Exceptions;
 
 namespace SplatNet2.Net.Api.Network
 {
@@ -76,7 +77,7 @@ namespace SplatNet2.Net.Api.Network
             }
             catch
             {
-                throw new AuthenticationException("Unable to authenticate with provided cookie. Please refresh the cookie before continuing.");
+                throw new ExpiredCookieException("Unable to authenticate with provided cookie. Please refresh the cookie before continuing.", null);
             }
 
             List<string> splatoonBattles = new List<string>();
