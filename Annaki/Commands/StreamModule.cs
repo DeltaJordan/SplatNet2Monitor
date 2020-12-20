@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace Annaki.Commands
 {
-    public class StreamModule : BaseExtension
+    public class StreamModule : BaseCommandModule
     {
         [Command("bind-stream"), RequireOwner]
         public async Task BindStream(CommandContext ctx)
@@ -46,10 +46,6 @@ namespace Annaki.Commands
                 await ctx.Member.GrantRoleAsync(notificationRole);
                 await ctx.RespondAsync("Added role successfully!");
             }
-        }
-
-        protected override void Setup(DiscordClient client)
-        {
         }
     }
 }

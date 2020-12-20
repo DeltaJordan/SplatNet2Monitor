@@ -8,7 +8,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace Annaki.Commands
 {
-    public class AdminModule : BaseExtension
+    public class AdminModule : BaseCommandModule
     {
         [Command("reset")]
         public async Task Reset(CommandContext ctx)
@@ -29,11 +29,6 @@ namespace Annaki.Commands
             {
                 await ctx.RespondAsync("Error occured. Try again if possible.");
             }
-        }
-
-        protected override void Setup(DiscordClient client)
-        {
-            
         }
     }
 }

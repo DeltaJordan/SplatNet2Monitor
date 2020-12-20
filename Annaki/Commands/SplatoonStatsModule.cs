@@ -16,7 +16,7 @@ using SplatNet2.Net.Monitor.Workers;
 namespace Annaki.Commands
 {
     [Group("plot"), RequireOwner]
-    public class SplatoonStatsModule : BaseExtension
+    public class SplatoonStatsModule : BaseCommandModule
     {
         [Command("day")]
         public async Task PlotDayBattles(CommandContext ctx, string mode)
@@ -93,10 +93,6 @@ namespace Annaki.Commands
             plotter.SaveToFile(outputPath);
 
             await ctx.RespondWithFileAsync(outputPath);
-        }
-
-        protected override void Setup(DiscordClient client)
-        {
         }
     }
 }
