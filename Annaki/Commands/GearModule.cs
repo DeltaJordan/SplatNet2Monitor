@@ -288,10 +288,5 @@ namespace Annaki.Commands
                 Logger.Error(e);
             }
         }
-
-        protected override void Setup(DiscordClient client)
-        {
-
-        }
     }
 }
