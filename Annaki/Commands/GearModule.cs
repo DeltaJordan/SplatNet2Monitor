@@ -13,7 +13,7 @@ using SplatNet2.Net.Api.Data;
 
 namespace Annaki.Commands
 {
-    public class GearModule : BaseExtension
+    public class GearModule
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
