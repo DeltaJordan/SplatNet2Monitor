@@ -8,6 +8,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace Annaki.Commands
 {
+    [RequireOwner]
     public class AdminModule : BaseCommandModule
     {
         [Command("reset")]
@@ -18,6 +19,7 @@ namespace Annaki.Commands
             await ctx.RespondAsync("Successfully reset error count.");
         }
 
+        [Command("auth")]
         public async Task Auth(CommandContext ctx, [RemainingText] string authInfo)
         {
             if (await Program.BattleMonitor.RefreshCookie(authInfo))
