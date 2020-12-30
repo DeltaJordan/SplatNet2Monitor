@@ -96,9 +96,10 @@
     function drawZonesChart() {
         var data = new google.visualization.DataTable();
         data.addColumn('number', 'Index Number of Battle');
-        data.addColumn({ type: 'date', role: 'tooltip' });
         data.addColumn('number', 'X Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
         data.addColumn('number', 'Lobby Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
 
         var battleData = [@Model.FormatBattleData(GameMode.SplatZones)];
 
@@ -123,9 +124,10 @@
     function drawRainChart() {
         var data = new google.visualization.DataTable();
         data.addColumn('number', 'Index Number of Battle');
-        data.addColumn({ type: 'date', role: 'tooltip' });
         data.addColumn('number', 'X Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
         data.addColumn('number', 'Lobby Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
 
         var battleData = [@Model.FormatBattleData(GameMode.Rainmaker)];
 
@@ -150,9 +152,10 @@
     function drawTowerChart() {
         var data = new google.visualization.DataTable();
         data.addColumn('number', 'Index Number of Battle');
-        data.addColumn({ type: 'date', role: 'tooltip' });
         data.addColumn('number', 'X Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
         data.addColumn('number', 'Lobby Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
 
         var battleData = [@Model.FormatBattleData(GameMode.TowerControl)];
 
