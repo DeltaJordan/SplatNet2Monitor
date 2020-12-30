@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using ClaimsSample.Data;
+using Annaki.Web.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
@@ -27,14 +27,10 @@ namespace Annaki.Web
         {
             services.AddDefaultIdentity<IdentityUser>()
                 .AddRoles<IdentityRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>();
-#if DEBUG
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("Default"));
-#else
-            services.AddDbContext<ApplicationDbContext>(options => 
-                options.UseMySql(this.Configuration.GetConnectionString("MySqlConnection"), ServerVersion.AutoDetect(this.Configuration.GetConnectionString("MySqlConnection"))));
-#endif
+                .AddEntityFrameworkStores<IdentityContext>();
+
+            services.AddDbContext<IdentityContext>(options => 
+                options.UseMySQL(this.Configuration.GetConnectionString("MySqlConnection")));
 
             services.AddAuthentication(options =>
                 {
