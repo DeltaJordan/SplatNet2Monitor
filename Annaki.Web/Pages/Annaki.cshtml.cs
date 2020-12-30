@@ -62,9 +62,11 @@ namespace Annaki.Web.Pages
         {
             Regex regex = new Regex(@"Date\(([0-9]+)\)");
 
-            return string.Join(',',
-                BattleCacheProcessor.GetModeArray(gameMode, this.userId)
-                    .OrderByDescending(x => ulong.Parse(regex.Match(x).Groups[0].Value)));
+            string[] modeArray = BattleCacheProcessor.GetModeArray(gameMode, this.userId);
+
+            Console.WriteLine(regex.Match(modeArray.First()).Groups[0].Value);
+
+            return string.Join(',', modeArray.OrderByDescending(x => ulong.Parse(regex.Match(x).Groups[0].Value)));
         }
     }
 }
