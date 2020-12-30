@@ -11,26 +11,33 @@ using SplatNet2.Net.Api.Network.Data;
 
 namespace Annaki.Events.Workers
 {
-    public static class BattleMonitorEventWorker
+    public class BattleMonitorEventWorker
     {
+        public ulong UserId { get; }
         private static readonly Logger ClassLogger = LogManager.GetCurrentClassLogger();
 
-        public static void BattleMonitor_BattlesRetrieved(object sender, Dictionary<int, string> e)
+        public BattleMonitorEventWorker(ulong userId)
+        {
+            this.UserId = userId;
+        }
+
+        public void BattleMonitor_BattlesRetrieved(object sender, Dictionary<int, string> e)
         {
             foreach ((int battleNumber, string battleJson) in e)
             {
-                string battleDirectory = Directory.CreateDirectory(Path.Combine(Globals.AppPath, "Battles")).FullName;
+                string battleDirectory = Directory.CreateDirectory(Path.Combine(Globals.AppPath, "Battles", this.UserId.ToString())).FullName;
 
                 File.WriteAllText(Path.Combine(battleDirectory, $"Battle #{battleNumber}"), battleJson);
             }
 
-            if (Globals.BotSettings.ReadBattleNumbers == null)
+            if (Globals.BotSettings.Users[this.UserId].ReadBattleNumbers == null)
             {
-                Globals.BotSettings.ReadBattleNumbers = e.Keys.ToArray();
+                Globals.BotSettings.Users[this.UserId].ReadBattleNumbers = e.Keys.ToArray();
             }
             else
             {
-                Globals.BotSettings.ReadBattleNumbers = Globals.BotSettings.ReadBattleNumbers.Concat(e.Keys).ToArray();
+                Globals.BotSettings.Users[this.UserId].ReadBattleNumbers = 
+                    Globals.BotSettings.Users[this.UserId].ReadBattleNumbers.Concat(e.Keys).ToArray();
             }
 
             Globals.BotSettings.SaveSettings();
@@ -38,25 +45,38 @@ namespace Annaki.Events.Workers
             ClassLogger.Info($"Saved {e.Count} battles (#{e.Keys.OrderBy(x => x).First()}-#{e.Keys.OrderBy(x => x).Last()}).");
         }
 
-        public static async void BattleMonitor_CookieRefreshed(object sender, SplatnetCookie e)
+        public async void BattleMonitor_CookieRefreshed(object sender, SplatnetCookie e)
         {
-            DiscordMember owner = await Program.Client.Guilds.First().Value
-                .GetMemberAsync(Program.Client.CurrentApplication.Owners.First().Id);
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
+
+            DiscordUser discordUser = await Annaki.Client.GetUserAsync(this.UserId);
 
             DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
 
-            Globals.BotSettings.Cookie = e;
+            if (Globals.BotSettings.Users == null)
+            {
+                Globals.BotSettings.Users = new Dictionary<ulong, UserSettings>();
+            }
+
+            if (!Globals.BotSettings.Users.ContainsKey(this.UserId))
+            {
+                Globals.BotSettings.Users[this.UserId] = new UserSettings();
+            }
+
+            Globals.BotSettings.Users[this.UserId].Cookie = e;
             Globals.BotSettings.SaveSettings();
 
             ClassLogger.Info("Cookie has been refreshed and updated successfully.");
 
-            await dmChannel.SendMessageAsync("Cookie has been refreshed and updated successfully.");
+            await dmChannel.SendMessageAsync(
+                $"Cookie for {discordUser.Username}#{discordUser.Discriminator} has been refreshed and updated successfully.");
         }
 
-        public static async void BattleMonitor_HeadgearFound(object sender, SplatoonPlayer[] e)
+        public async void BattleMonitor_HeadgearFound(object sender, SplatoonPlayer[] e)
         {
-            DiscordMember owner = await Program.Client.Guilds.First().Value
-                .GetMemberAsync(Program.Client.CurrentApplication.Owners.First().Id);
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
 
             DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
 
@@ -82,10 +102,10 @@ namespace Annaki.Events.Workers
             }
         }
 
-        public static async void BattleMonitor_ClothingFound(object sender, SplatoonPlayer[] e)
+        public async void BattleMonitor_ClothingFound(object sender, SplatoonPlayer[] e)
         {
-            DiscordMember owner = await Program.Client.Guilds.First().Value
-                .GetMemberAsync(Program.Client.CurrentApplication.Owners.First().Id);
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
 
             DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
 
@@ -111,10 +131,10 @@ namespace Annaki.Events.Workers
             }
         }
 
-        public static async void BattleMonitor_ShoesFound(object sender, SplatoonPlayer[] e)
+        public async void BattleMonitor_ShoesFound(object sender, SplatoonPlayer[] e)
         {
-            DiscordMember owner = await Program.Client.Guilds.First().Value
-                .GetMemberAsync(Program.Client.CurrentApplication.Owners.First().Id);
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
 
             DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
 

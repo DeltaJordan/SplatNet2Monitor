@@ -341,3 +341,4 @@ healthchecksdb
 
 # Security Sensitive Information
 **/settings.json
+**/appsettings.json

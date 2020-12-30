@@ -11,8 +11,8 @@ namespace Annaki.Events.Workers
     {
         public static async void BattleMonitor_ExceptionOccured(object sender, (bool stopped, Exception exception) e)
         {
-            DiscordMember owner = await Program.Client.Guilds.First().Value
-                .GetMemberAsync(Program.Client.CurrentApplication.Owners.First().Id);
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
 
             DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
 
@@ -65,8 +65,8 @@ namespace Annaki.Events.Workers
 
         public static async void BattleMonitor_CookieExpired(object sender, ExpiredCookieException e)
         {
-            DiscordMember owner = await Program.Client.Guilds.First().Value
-                .GetMemberAsync(Program.Client.CurrentApplication.Owners.First().Id);
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
 
             DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
 

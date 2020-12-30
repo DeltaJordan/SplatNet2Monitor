@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Authentication;
 using System.Threading.Tasks;
+using System.Timers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SplatNet2.Net.Api;
@@ -26,6 +27,8 @@ namespace SplatNet2.Net.Monitor.Workers
         public event EventHandler<SplatnetCookie> CookieRefreshed;
         public event EventHandler<ExpiredCookieException> CookieExpired;
         public event EventHandler<(bool stopped, Exception exception)> ExceptionOccured;
+        public bool NeedsAuth { get; private set; }
+        public string AuthUrl { get; private set; }
 
         private readonly List<Headgear> lookingForHeadGears = new List<Headgear>();
         private readonly List<Clothing> lookingForClothing = new List<Clothing>();
@@ -36,31 +39,44 @@ namespace SplatNet2.Net.Monitor.Workers
         private Cookie iksmCookie;
 
         private readonly List<int> readBattleNumbers = new List<int>();
-
-        private bool needsAuth;
         private SplatnetAuthClient authClient;
+        private SplatNetApiClient apiClient;
 
         private int genericErrorCount;
 
-        public BattleMonitor(params int[] readBattleNumbers)
+        private Timer monitorTimer;
+
+        private BattleMonitor()
         {
+        }
+
+        public static async Task<BattleMonitor> CreateInstance(SplatnetCookie splatnetCookie, params int[] readBattleNumbers)
+        {
+            BattleMonitor battleMonitor = new BattleMonitor
+            {
+                iksmCookie = splatnetCookie?.Cookie,
+                apiClient = new SplatNetApiClient()
+            };
+
+            if (splatnetCookie != null)
+                battleMonitor.apiClient.ApplyIksmCookie(battleMonitor.iksmCookie);
+            else
+            {
+                await battleMonitor.HandleAuthError(new ExpiredCookieException("IKSM was null.", null));
+            }
+
             if (readBattleNumbers != null)
-                this.readBattleNumbers.AddRange(readBattleNumbers);
+                battleMonitor.readBattleNumbers.AddRange(readBattleNumbers);
+
+            return battleMonitor;
         }
 
-        public async Task InitializeAsync(SplatnetCookie splatnetCookie)
-        {
-            this.iksmCookie = splatnetCookie?.Cookie;
-
-            SplatNetApiClient.ApplyIksmCookie(this.iksmCookie);
-        }
-
-        public async Task<bool> RefreshCookie(string accountUrl)
+    public async Task<bool> RefreshCookie(string accountUrl)
         {
             try
             {
                 this.iksmCookie = (await this.AuthenticateCookie(accountUrl)).Cookie;
-                SplatNetApiClient.ApplyIksmCookie(this.iksmCookie);
+                this.apiClient.ApplyIksmCookie(this.iksmCookie);
             }
             catch (Exception e)
             {
@@ -69,14 +85,14 @@ namespace SplatNet2.Net.Monitor.Workers
                 return false;
             }
 
-            this.needsAuth = false;
+            this.NeedsAuth = false;
 
             return true;
         }
 
         private async Task HandleAuthError(ExpiredCookieException ex)
         {
-            this.needsAuth = true;
+            this.NeedsAuth = true;
 
             this.authClient = new SplatnetAuthClient();
 
@@ -85,6 +101,7 @@ namespace SplatNet2.Net.Monitor.Workers
                 ex = new ExpiredCookieException(ex.Message, await this.GetLoginLink());
             }
 
+            this.AuthUrl = ex.ReAuthUrl;
             this.CookieExpired?.Invoke(this, ex);
         }
 
@@ -153,105 +170,112 @@ namespace SplatNet2.Net.Monitor.Workers
             this.genericErrorCount = 0;
         }
 
-        public async Task BeginMonitor()
+        public async Task BeginMonitor(int intervalSeconds = 180)
         {
-            while (true)
+            this.monitorTimer = new Timer(intervalSeconds * 1000);
+            this.monitorTimer.Elapsed += this.MonitorTimer_Elapsed;
+            this.monitorTimer.Start();
+        }
+
+        private async void MonitorTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            if (this.genericErrorCount >= 3 || this.NeedsAuth)
             {
-                if (this.genericErrorCount >= 3 || this.needsAuth)
+                return;
+            }
+
+            string[] battles;
+
+            try
+            {
+                battles = await this.apiClient.RetrieveBattles(this.readBattleNumbers.ToArray());
+            }
+            catch (NullReferenceException ex)
+            {
+                await this.HandleAuthError(new ExpiredCookieException(ex.Message, null));
+
+                return;
+            }
+            catch (ExpiredCookieException ex)
+            {
+                await this.HandleAuthError(ex);
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                this.ExceptionOccured?.Invoke(this, (this.genericErrorCount >= 3, ex));
+
+                this.genericErrorCount++;
+
+                return;
+            }
+
+            if (!battles.Any())
+                return;
+
+            string latestBattleJson = null;
+            int latestBattleNumber = -1;
+
+            Dictionary<int, string> battleDictionary = new Dictionary<int, string>();
+
+            foreach (string splatoonBattle in battles)
+            {
+                JObject splatnetJson = JObject.Parse(splatoonBattle);
+
+                int battleNumber = splatnetJson["battle_number"].Value<int>();
+
+                battleDictionary[battleNumber] = splatoonBattle;
+
+                this.readBattleNumbers.Add(battleNumber);
+
+                if (latestBattleNumber < battleNumber)
                 {
-                    continue;
+                    latestBattleNumber = battleNumber;
+                    latestBattleJson = splatoonBattle;
                 }
+            }
 
-                string[] battles;
+            this.BattlesRetrieved?.Invoke(this, battleDictionary);
 
-                try
-                {
-                    battles = await SplatNetApiClient.RetrieveBattles(this.readBattleNumbers.ToArray());
-                }
-                catch (ExpiredCookieException ex)
-                {
-                    await this.HandleAuthError(ex);
+            SplatoonBattle latestBattle = BattleJsonReader.ParseBattle(latestBattleJson);
 
-                    continue;
-                }
-                catch (Exception ex)
-                {
-                    this.ExceptionOccured?.Invoke(this, (this.genericErrorCount >= 3, ex));
+            List<SplatoonPlayer> otherPlayers = latestBattle.Players.Where(x => !x.IsMe).ToList();
 
-                    this.genericErrorCount++;
+            foreach (Headgear headgear in this.lookingForHeadGears)
+            {
+                SplatoonPlayer[] foundPlayer = otherPlayers
+                    .Where(x =>
+                        x.Gear.Headgear.MainAbility == headgear.MainAbility &&
+                        (headgear.HeadgearId == -1 || x.Gear.Headgear.HeadgearId == headgear.HeadgearId))
+                    .ToArray();
 
-                    continue;
-                }
+                if (foundPlayer.Any())
+                    this.HeadgearFound?.Invoke(this, foundPlayer);
+            }
 
-                if (!battles.Any())
-                    continue;
+            foreach (Clothing clothing in this.lookingForClothing)
+            {
+                SplatoonPlayer[] foundPlayer = otherPlayers
+                    .Where(x =>
+                        x.Gear.Clothing.MainAbility == clothing.MainAbility &&
+                        (clothing.ClothingId == -1 || x.Gear.Clothing.ClothingId == clothing.ClothingId))
+                    .ToArray();
 
-                string latestBattleJson = null;
-                int latestBattleNumber = -1;
+                if (foundPlayer.Any())
+                    this.ClothingFound?.Invoke(this, foundPlayer);
+            }
 
-                Dictionary<int, string> battleDictionary = new Dictionary<int, string>();
+            foreach (Shoes shoes in this.lookingForShoes)
+            {
+                SplatoonPlayer[] foundPlayer = otherPlayers
+                    .Where(x =>
+                        x.Gear.Shoes.MainAbility == shoes.MainAbility &&
+                        (shoes.ShoeId == -1 || x.Gear.Shoes.ShoeId == shoes.ShoeId))
+                    .ToArray();
 
-                foreach (string splatoonBattle in battles)
-                {
-                    JObject splatnetJson = JObject.Parse(splatoonBattle);
-
-                    int battleNumber = splatnetJson["battle_number"].Value<int>();
-
-                    battleDictionary[battleNumber] = splatoonBattle;
-
-                    this.readBattleNumbers.Add(battleNumber);
-
-                    if (latestBattleNumber < battleNumber)
-                    {
-                        latestBattleNumber = battleNumber;
-                        latestBattleJson = splatoonBattle;
-                    }
-                }
-
-                this.BattlesRetrieved?.Invoke(this, battleDictionary);
-
-                SplatoonBattle latestBattle = await SplatNetApiClient.ParseBattle(latestBattleJson);
-
-                List<SplatoonPlayer> otherPlayers = latestBattle.Players.Where(x => !x.IsMe).ToList();
-
-                foreach (Headgear headgear in this.lookingForHeadGears)
-                {
-                    SplatoonPlayer[] foundPlayer = otherPlayers
-                        .Where(x =>
-                            x.Gear.Headgear.MainAbility == headgear.MainAbility &&
-                            (headgear.HeadgearId == -1 || x.Gear.Headgear.HeadgearId == headgear.HeadgearId))
-                        .ToArray();
-
-                    if (foundPlayer.Any())
-                        this.HeadgearFound?.Invoke(this, foundPlayer);
-                }
-
-                foreach (Clothing clothing in this.lookingForClothing)
-                {
-                    SplatoonPlayer[] foundPlayer = otherPlayers
-                        .Where(x => 
-                            x.Gear.Clothing.MainAbility == clothing.MainAbility &&
-                            (clothing.ClothingId == -1 || x.Gear.Clothing.ClothingId == clothing.ClothingId))
-                        .ToArray();
-
-                    if (foundPlayer.Any())
-                        this.ClothingFound?.Invoke(this, foundPlayer);
-                }
-
-                foreach (Shoes shoes in this.lookingForShoes)
-                {
-                    SplatoonPlayer[] foundPlayer = otherPlayers
-                        .Where(x =>
-                            x.Gear.Shoes.MainAbility == shoes.MainAbility &&
-                            (shoes.ShoeId == -1 || x.Gear.Shoes.ShoeId == shoes.ShoeId))
-                        .ToArray();
-
-                    if (foundPlayer.Any())
-                        this.ShoesFound?.Invoke(this, foundPlayer);
-                }
-
-                // Every 180 seconds. Unsure if this is too much?
-                await Task.Delay(180000);
+                if (foundPlayer.Any())
+                    this.ShoesFound?.Invoke(this, foundPlayer);
             }
         }
     }

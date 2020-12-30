@@ -1,0 +1,31 @@
+﻿@page
+@model Annaki.Web.Pages.RefreshModel
+@{
+    ViewData["Title"] = "Refresh";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-route-returnUrl="@Model.ReturnUrl" method="post">
+            Your battle monitor cookie needs refreshed. Follow <a href="@Model.GetAuthUrl()" target="_blank">this link</a>,
+            sign in (if you are not already), then right click the "Select this Account" button, copy, and then paste the text below and click "Refresh".
+            <hr/>
+            <h2>Example:</h2>
+            <img alt="Example" src="img/refresh-example.png"/>
+            <hr />
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Input.AuthInfo"></label>
+                <input asp-for="Input.AuthInfo" class="form-control" />
+                <span asp-validation-for="Input.AuthInfo" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Refresh</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

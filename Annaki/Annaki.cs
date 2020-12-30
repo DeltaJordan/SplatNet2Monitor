@@ -27,10 +27,11 @@ using LogLevel = NLog.LogLevel;
 
 namespace Annaki
 {
-    public static class Program
+    public static class Annaki
     {
         public static DiscordClient Client;
-        public static BattleMonitor BattleMonitor;
+        public static readonly Dictionary<ulong, BattleMonitor> BattleMonitors = new Dictionary<ulong, BattleMonitor>();
+        public static readonly Dictionary<ulong, BattleMonitorEventWorker> BattleMonitorEventWorkers = new Dictionary<ulong, BattleMonitorEventWorker>();
 
         private static Timer merchTimer;
 
@@ -38,7 +39,7 @@ namespace Annaki
 
         private static CommandsNextExtension commands;
 
-        public static async Task Main(string[] args)
+        public static async Task Start()
         {
             // Make sure Log folder exists
             Directory.CreateDirectory(Path.Combine(Globals.AppPath, "Logs"));
@@ -172,56 +173,70 @@ namespace Annaki
 
         private static async Task StartMonitor()
         {
-            SplatnetCookie splatnetCookie;
 
-            try
+            if (Globals.BotSettings.Users == null)
             {
-                splatnetCookie = Globals.BotSettings.Cookie;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-
-                splatnetCookie = null;
+                return;
             }
 
-            BattleMonitor = new BattleMonitor(Globals.BotSettings.ReadBattleNumbers);
-
-            BattleMonitor.ShoesFound += BattleMonitorEventWorker.BattleMonitor_ShoesFound;
-            BattleMonitor.ClothingFound += BattleMonitorEventWorker.BattleMonitor_ClothingFound;
-            BattleMonitor.HeadgearFound += BattleMonitorEventWorker.BattleMonitor_HeadgearFound;
-            BattleMonitor.CookieRefreshed += BattleMonitorEventWorker.BattleMonitor_CookieRefreshed;
-            BattleMonitor.BattlesRetrieved += BattleMonitorEventWorker.BattleMonitor_BattlesRetrieved;
-            BattleMonitor.CookieExpired += ExceptionEventWorker.BattleMonitor_CookieExpired;
-            BattleMonitor.ExceptionOccured += ExceptionEventWorker.BattleMonitor_ExceptionOccured;
-
-            if (Globals.BotSettings.WatchedHeadgear != null)
+            foreach (ulong id in Globals.BotSettings.Users.Keys)
             {
-                foreach (Headgear headgear in Globals.BotSettings.WatchedHeadgear)
+                await InitializeBattleMonitor(id);
+            }
+        }
+
+        public static async Task InitializeBattleMonitor(ulong userId)
+        {
+            UserSettings userSettings = null;
+
+            if (Globals.BotSettings.Users != null && Globals.BotSettings.Users.ContainsKey(userId))
+            {
+                userSettings = Globals.BotSettings.Users[userId];
+            }
+                
+            SplatnetCookie splatnetCookie = userSettings?.Cookie;
+
+            BattleMonitor battleMonitor = await BattleMonitor.CreateInstance(splatnetCookie, userSettings?.ReadBattleNumbers);
+
+            BattleMonitorEventWorker battleMonitorEventWorker = new BattleMonitorEventWorker(userId);
+
+            battleMonitor.ShoesFound += battleMonitorEventWorker.BattleMonitor_ShoesFound;
+            battleMonitor.ClothingFound += battleMonitorEventWorker.BattleMonitor_ClothingFound;
+            battleMonitor.HeadgearFound += battleMonitorEventWorker.BattleMonitor_HeadgearFound;
+            battleMonitor.CookieRefreshed += battleMonitorEventWorker.BattleMonitor_CookieRefreshed;
+            battleMonitor.BattlesRetrieved += battleMonitorEventWorker.BattleMonitor_BattlesRetrieved;
+            battleMonitor.CookieExpired += ExceptionEventWorker.BattleMonitor_CookieExpired;
+            battleMonitor.ExceptionOccured += ExceptionEventWorker.BattleMonitor_ExceptionOccured;
+
+            BattleMonitorEventWorkers.Add(userId, battleMonitorEventWorker);
+
+            if (userSettings?.WatchedHeadgear != null)
+            {
+                foreach (Headgear headgear in userSettings.WatchedHeadgear)
                 {
-                    BattleMonitor.AddWatchedHeadgear(headgear.HeadgearId, headgear.MainAbility);
+                    battleMonitor.AddWatchedHeadgear(headgear.HeadgearId, headgear.MainAbility);
                 }
             }
 
-            if (Globals.BotSettings.WatchedClothing != null)
+            if (userSettings?.WatchedClothing != null)
             {
-                foreach (Clothing clothing in Globals.BotSettings.WatchedClothing)
+                foreach (Clothing clothing in userSettings.WatchedClothing)
                 {
-                    BattleMonitor.AddWatchedClothing(clothing.ClothingId, clothing.MainAbility);
+                    battleMonitor.AddWatchedClothing(clothing.ClothingId, clothing.MainAbility);
                 }
             }
 
-            if (Globals.BotSettings.WatchedShoes != null)
+            if (userSettings?.WatchedShoes != null)
             {
-                foreach (Shoes shoes in Globals.BotSettings.WatchedShoes)
+                foreach (Shoes shoes in userSettings.WatchedShoes)
                 {
-                    BattleMonitor.AddWatchedShoes(shoes.ShoeId, shoes.MainAbility);
+                    battleMonitor.AddWatchedShoes(shoes.ShoeId, shoes.MainAbility);
                 }
             }
 
-            await BattleMonitor.InitializeAsync(splatnetCookie);
+            await battleMonitor.BeginMonitor();
 
-            await BattleMonitor.BeginMonitor();
+            BattleMonitors.Add(userId, battleMonitor);
         }
     }
 }

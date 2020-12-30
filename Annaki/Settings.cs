@@ -8,6 +8,7 @@ namespace Annaki
 {
     public class Settings
     {
+
         [JsonProperty("bot_token")]
         public string BotToken { get; set; }
 
@@ -26,6 +27,19 @@ namespace Annaki
         [JsonProperty("prefix")]
         public string Prefix { get; set; }
 
+        [JsonProperty("users")]
+        public Dictionary<ulong, UserSettings> Users { get; set; }
+
+        public void SaveSettings()
+        {
+            string json = JsonConvert.SerializeObject(this, Formatting.Indented);
+
+            File.WriteAllText(Path.Combine(Globals.AppPath, "Data", "settings.json"), json);
+        }
+    }
+
+    public class UserSettings
+    {
         [JsonProperty("iksm_cookie")]
         public SplatnetCookie Cookie { get; set; }
 
@@ -40,12 +54,5 @@ namespace Annaki
 
         [JsonProperty("watched_shoes")]
         public List<Shoes> WatchedShoes { get; set; }
-
-        public void SaveSettings()
-        {
-            string json = JsonConvert.SerializeObject(this, Formatting.Indented);
-
-            File.WriteAllText(Path.Combine(Globals.AppPath, "Data", "settings.json"), json);
-        }
     }
 }

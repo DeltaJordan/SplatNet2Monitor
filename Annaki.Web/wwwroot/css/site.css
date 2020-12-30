@@ -1,0 +1,102 @@
+﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+a.navbar-brand {
+  white-space: normal;
+  text-align: center;
+  word-break: break-all;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  font-size: 14px;
+}
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.border-top {
+  border-top: 1px solid #e5e5e5;
+}
+.border-bottom {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+  font-size: 1rem;
+  line-height: inherit;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  line-height: 60px; /* Vertically center the text there */
+}
+
+.login-button {
+    display: inline-flex;
+    appearance: none;
+    -moz-box-align: center;
+    align-items: center;
+    -moz-box-pack: center;
+    justify-content: center;
+    transition: all 250ms ease 0s;
+    user-select: none;
+    position: relative;
+    white-space: nowrap;
+    vertical-align: middle;
+    outline: currentcolor none medium;
+    width: auto;
+    line-height: 1.2;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    height: 2rem;
+    min-width: 2rem;
+    font-size: 0.875rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    background: transparent none repeat scroll 0% 0%;
+}
+
+.login-span {
+    margin-right: 0.5rem;
+}
+
+.login-svg {
+    font-size: 1em;
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    line-height: 1em;
+    vertical-align: middle;
+}
+
+/* Graph */
+
+.graph-carousel {
+    width: 75%;
+    height: 35rem;
+    background-color: rgba(255, 255, 255, 0.05);
+}
