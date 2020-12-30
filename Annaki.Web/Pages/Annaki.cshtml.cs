@@ -64,7 +64,7 @@ namespace Annaki.Web.Pages
 
             string[] modeArray = BattleCacheProcessor.GetModeArray(gameMode, this.userId);
 
-            Console.WriteLine(regex.Match(modeArray.First()).Groups[0].Value);
+            Console.WriteLine(regex.Match(modeArray.First()).Groups[1].Value);
 
             return string.Join(',', modeArray.OrderByDescending(x => ulong.Parse(regex.Match(x).Groups[0].Value)));
         }
