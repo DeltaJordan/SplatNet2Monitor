@@ -60,9 +60,14 @@ namespace Annaki.Web.Pages
 
         public string FormatBattleData(GameMode gameMode)
         {
-            Regex regex = new Regex(@"Date\(([0-9]+)\)");
+            Regex regex = new Regex(@"new Date\([0-9]+\)");
 
             string[] modeArray = BattleCacheProcessor.GetModeArray(gameMode, this.userId);
+
+            for (int i = 0; i < modeArray.Length; i++)
+            {
+                modeArray[i] = regex.Replace(modeArray[i], $"{i + 1}");
+            }
 
             return string.Join(',', modeArray.OrderByDescending(x => ulong.Parse(regex.Match(x).Groups[1].Value)));
         }
