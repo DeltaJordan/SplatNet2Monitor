@@ -69,9 +69,9 @@ namespace Annaki.Web.Pages
                 modeArray[i] = dateRegex.Replace(modeArray[i], $"{i + 1}");
             }
 
-            Regex orderRegex = new Regex(@"\[[0-9]+,");
+            Regex orderRegex = new Regex(@"\[([0-9]+),");
 
-            return string.Join(',', modeArray.OrderByDescending(x => int.Parse(orderRegex.Match(x).Value)));
+            return string.Join(',', modeArray.OrderByDescending(x => int.Parse(orderRegex.Match(x).Groups[1].Value)));
         }
     }
 }
