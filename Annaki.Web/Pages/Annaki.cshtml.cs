@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Annaki.Data.Processors;
 using Annaki.Events.Workers;
@@ -59,7 +60,11 @@ namespace Annaki.Web.Pages
 
         public string FormatBattleData(GameMode gameMode)
         {
-            return string.Join(',', BattleCacheProcessor.GetModeArray(gameMode, this.userId));
+            Regex regex = new Regex(@"Date\(([0-9]+)\)");
+
+            return string.Join(',',
+                BattleCacheProcessor.GetModeArray(gameMode, this.userId)
+                    .OrderByDescending(x => int.Parse(regex.Match(x).Captures.First().Value)));
         }
     }
 }
