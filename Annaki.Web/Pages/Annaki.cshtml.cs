@@ -64,7 +64,7 @@ namespace Annaki.Web.Pages
 
             return string.Join(',',
                 BattleCacheProcessor.GetModeArray(gameMode, this.userId)
-                    .OrderByDescending(x => int.Parse(regex.Match(x).Captures.First().Value)));
+                    .OrderByDescending(x => int.Parse(regex.Match(x).Captures[1].Value)));
         }
     }
 }
