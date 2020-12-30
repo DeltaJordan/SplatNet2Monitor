@@ -68,13 +68,22 @@
     function drawClamsChart() {
         var data = new google.visualization.DataTable();
         data.addColumn('number', 'Index Number of Battle');
-        data.addColumn({ type: 'date', role: 'tooltip' });
         data.addColumn('number', 'X Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
         data.addColumn('number', 'Lobby Power');
+        data.addColumn({ type: 'string', role: 'tooltip' });
 
-        data.addRows([
-            @Model.FormatBattleData(GameMode.ClamBlitz)
-        ]);
+        var battleData = [@Model.FormatBattleData(GameMode.ClamBlitz)];
+
+        for (let i = 0; i < battleData.length; i++) {
+            data.addRow([
+                battleData[i][0],
+                battleData[i][2],
+                `X Power: ${battleData[i][2]}\n${battleData[i][1].toLocaleString("en-US")}`,
+                battleData[i][3],
+                `Lobby Power: ${battleData[i][3]}\n${battleData[i][1].toLocaleString("en-US")}`
+            ]);
+        }
 
         var chart = new google.visualization.LineChart(document.getElementById('clams-graph'));
         chart.draw(data, options);
@@ -91,9 +100,17 @@
         data.addColumn('number', 'X Power');
         data.addColumn('number', 'Lobby Power');
 
-        data.addRows([
-            @Model.FormatBattleData(GameMode.SplatZones)
-        ]);
+        var battleData = [@Model.FormatBattleData(GameMode.SplatZones)];
+
+        for (let i = 0; i < battleData.length; i++) {
+            data.addRow([
+                battleData[i][0],
+                battleData[i][2],
+                `X Power: ${battleData[i][2]}\n${battleData[i][1].toLocaleString("en-US")}`,
+                battleData[i][3],
+                `Lobby Power: ${battleData[i][3]}\n${battleData[i][1].toLocaleString("en-US")}`
+            ]);
+        }
 
         var chart = new google.visualization.LineChart(document.getElementById('zones-graph'));
         chart.draw(data, options);
@@ -110,9 +127,17 @@
         data.addColumn('number', 'X Power');
         data.addColumn('number', 'Lobby Power');
 
-        data.addRows([
-            @Model.FormatBattleData(GameMode.Rainmaker)
-        ]);
+        var battleData = [@Model.FormatBattleData(GameMode.Rainmaker)];
+
+        for (let i = 0; i < battleData.length; i++) {
+            data.addRow([
+                battleData[i][0],
+                battleData[i][2],
+                `X Power: ${battleData[i][2]}\n${battleData[i][1].toLocaleString("en-US")}`,
+                battleData[i][3],
+                `Lobby Power: ${battleData[i][3]}\n${battleData[i][1].toLocaleString("en-US")}`
+            ]);
+        }
 
         var chart = new google.visualization.LineChart(document.getElementById('rain-graph'));
         chart.draw(data, options);
@@ -129,9 +154,17 @@
         data.addColumn('number', 'X Power');
         data.addColumn('number', 'Lobby Power');
 
-        data.addRows([
-            @Model.FormatBattleData(GameMode.TowerControl)
-        ]);
+        var battleData = [@Model.FormatBattleData(GameMode.TowerControl)];
+
+        for (let i = 0; i < battleData.length; i++) {
+            data.addRow([
+                battleData[i][0],
+                battleData[i][2],
+                `X Power: ${battleData[i][2]}\n${battleData[i][1].toLocaleString("en-US")}`,
+                battleData[i][3],
+                `Lobby Power: ${battleData[i][3]}\n${battleData[i][1].toLocaleString("en-US")}`
+            ]);
+        }
 
         var chart = new google.visualization.LineChart(document.getElementById('tower-graph'));
         chart.draw(data, options);
