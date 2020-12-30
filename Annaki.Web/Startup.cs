@@ -29,8 +29,9 @@ namespace Annaki.Web
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<IdentityContext>();
 
-            services.AddDbContext<IdentityContext>(options => 
-                options.UseMySQL(this.Configuration.GetConnectionString("MySqlConnection")));
+            services.AddDbContext<IdentityContext>(options =>
+                options.UseMySql(this.Configuration.GetConnectionString("MySqlConnection"),
+                    ServerVersion.AutoDetect(this.Configuration.GetConnectionString("MySqlConnection"))));
 
             services.AddAuthentication(options =>
                 {
