@@ -205,7 +205,7 @@ namespace Annaki
             battleMonitor.HeadgearFound += battleMonitorEventWorker.BattleMonitor_HeadgearFound;
             battleMonitor.CookieRefreshed += battleMonitorEventWorker.BattleMonitor_CookieRefreshed;
             battleMonitor.BattlesRetrieved += battleMonitorEventWorker.BattleMonitor_BattlesRetrieved;
-            battleMonitor.CookieExpired += ExceptionEventWorker.BattleMonitor_CookieExpired;
+            battleMonitor.CookieExpired += battleMonitorEventWorker.BattleMonitor_CookieExpired;
             battleMonitor.ExceptionOccured += ExceptionEventWorker.BattleMonitor_ExceptionOccured;
 
             BattleMonitorEventWorkers.Add(userId, battleMonitorEventWorker);

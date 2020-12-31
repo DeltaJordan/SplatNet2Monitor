@@ -62,19 +62,5 @@ namespace Annaki.Events.Workers
                 }
             }
         }
-
-        public static async void BattleMonitor_CookieExpired(object sender, ExpiredCookieException e)
-        {
-            DiscordMember owner = await Annaki.Client.Guilds.First().Value
-                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
-
-            DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
-
-            await dmChannel.SendMessageAsync(
-                "The cookie has expired. No further battles can be saved until this issue is resolved.\n" +
-                $"Reauthentication url: {e.ReAuthUrl}");
-
-            await dmChannel.SendMessageAsync(e.ToString());
-        }
     }
 }

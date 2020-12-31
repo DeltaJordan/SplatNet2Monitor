@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using NLog;
 using SplatNet2.Net.Api.Data.Battles;
+using SplatNet2.Net.Api.Exceptions;
 using SplatNet2.Net.Api.Network.Data;
 
 namespace Annaki.Events.Workers
@@ -158,6 +159,32 @@ namespace Annaki.Events.Workers
             {
                 await dmChannel.SendMessageAsync(embed: embedBuilder.Build());
             }
+        }
+
+        public async void BattleMonitor_CookieExpired(object sender, ExpiredCookieException e)
+        {
+            // TODO Update with domain name.
+            const string domain = "198.199.74.168:5001";
+
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
+
+            // TODO Use Main server for production.
+            DiscordMember userMember = await Annaki.Client.Guilds.First(x => x.Key == 738823408686727248).Value
+                .GetMemberAsync(this.UserId);
+
+            DiscordDmChannel userDmChannel = await userMember.CreateDmChannelAsync();
+
+            await userDmChannel.SendMessageAsync($"Your Nintendo cookie has expired. " +
+                                                 $"Please proceed to https://{domain}/Refresh to refresh your cookie.");
+
+            DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
+
+            await dmChannel.SendMessageAsync(
+                $"The cookie has expired for {userMember.Username}#{userMember.Discriminator}. " +
+                $"No further battles can be saved until this issue is resolved.");
+
+            await dmChannel.SendMessageAsync(e.ToString());
         }
     }
 }
