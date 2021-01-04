@@ -19,15 +19,7 @@ namespace Annaki.Web
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    X509Certificate2 cert = X509Certificate2.CreateFromPemFile(
-                        "/etc/ssl/certs/kelpdo.me.pem",
-                        "/etc/ssl/certs/kelpdo.me.key");
-
-                    webBuilder.UseKestrel(options =>
-                    {
-                        options.ConfigureHttpsDefaults(httpsOptions => { httpsOptions.ServerCertificate = cert; });
-                        options.ConfigureEndpointDefaults(listenOptions => { listenOptions.UseHttps(cert); });
-                    });
+                    webBuilder.UseKestrel();
                     webBuilder.UseStartup<Startup>();
                 });
     }
