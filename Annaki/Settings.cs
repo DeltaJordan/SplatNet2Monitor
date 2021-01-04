@@ -54,5 +54,8 @@ namespace Annaki
 
         [JsonProperty("watched_shoes")]
         public List<Shoes> WatchedShoes { get; set; }
+
+        [JsonProperty("notified")]
+        public bool Notified { get; set; }
     }
 }

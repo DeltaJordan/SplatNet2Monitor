@@ -175,6 +175,8 @@ namespace SplatNet2.Net.Monitor.Workers
             this.monitorTimer = new Timer(intervalSeconds * 1000);
             this.monitorTimer.Elapsed += this.MonitorTimer_Elapsed;
             this.monitorTimer.Start();
+
+            this.MonitorTimer_Elapsed(this, null);
         }
 
         private async void MonitorTimer_Elapsed(object sender, ElapsedEventArgs e)

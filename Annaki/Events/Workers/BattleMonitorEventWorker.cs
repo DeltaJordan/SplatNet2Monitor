@@ -163,8 +163,12 @@ namespace Annaki.Events.Workers
 
         public async void BattleMonitor_CookieExpired(object sender, ExpiredCookieException e)
         {
-            // TODO Update with domain name.
-            const string domain = "198.199.74.168:5001";
+            if (Globals.BotSettings.Users[this.UserId].Notified)
+            {
+                return;
+            }
+
+            const string domain = "kelpdo.me";
 
             DiscordMember owner = await Annaki.Client.Guilds.First().Value
                 .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
@@ -185,6 +189,9 @@ namespace Annaki.Events.Workers
                 $"No further battles can be saved until this issue is resolved.");
 
             await dmChannel.SendMessageAsync(e.ToString());
+
+            Globals.BotSettings.Users[this.UserId].Notified = true;
+            Globals.BotSettings.SaveSettings();
         }
     }
 }
