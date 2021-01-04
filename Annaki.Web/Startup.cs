@@ -79,7 +79,7 @@ namespace Annaki.Web
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
-
+            
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
