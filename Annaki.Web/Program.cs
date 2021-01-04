@@ -19,7 +19,10 @@ namespace Annaki.Web
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseKestrel();
+                    webBuilder.UseKestrel(options =>
+                    {
+                    });
+                    webBuilder.UseUrls("http://*:5000");
                     webBuilder.UseStartup<Startup>();
                 });
     }
