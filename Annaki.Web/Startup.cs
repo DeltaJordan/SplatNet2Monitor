@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,8 @@ namespace Annaki.Web
                 {
                     options.ClientId = this.Configuration["Auth:Discord:Id"];
                     options.ClientSecret = this.Configuration["Auth:Discord:Secret"];
+                    options.SignInScheme = IdentityConstants.ExternalScheme;
+                    options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
 
                     options.SaveTokens = true;
                 });
