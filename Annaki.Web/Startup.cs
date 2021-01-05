@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using Annaki.Web.Data;
 using Microsoft.AspNetCore.Authentication;
@@ -25,6 +26,12 @@ namespace Annaki.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<ForwardedHeadersOptions>(options => 
+            {
+                // options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("198.199.74.168"), 24));
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
+
             services.AddDefaultIdentity<IdentityUser>()
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<IdentityContext>();
@@ -75,12 +82,9 @@ namespace Annaki.Web
                 app.UseHsts();
             }
 
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-            });
+            app.UseForwardedHeaders();
             
-            app.UseHttpsRedirection();
+            // app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
             app.UseAuthentication();
