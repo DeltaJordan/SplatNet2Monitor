@@ -28,7 +28,7 @@ namespace Annaki.Web
         {
             services.Configure<ForwardedHeadersOptions>(options => 
             {
-                // options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("198.199.74.168"), 24));
+                options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("198.199.74.168"), 24));
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
             });
 
