@@ -1,7 +1,8 @@
 ﻿@page
 @using SplatNet2.Net.Api.Data
-@model Annaki.Web.Pages.AnnakiModel
+@model Annaki.Web.Pages.KelpModel
 @{
+    ViewData["Title"] = "Kelp";
 }
 
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -17,7 +18,7 @@
 
     var options = {
         chartArea: { width: '70%', height: '90%' },
-        fontName: 'Loto',
+        fontName: 'Lato',
         pointSize: 5,
         backgroundColor: {
             fill: 'transparent'

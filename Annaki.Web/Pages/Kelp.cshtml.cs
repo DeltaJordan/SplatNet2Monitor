@@ -19,7 +19,7 @@ using SplatNet2.Net.Monitor.Workers;
 
 namespace Annaki.Web.Pages
 {
-    public class AnnakiModel : PageModel
+    public class KelpModel : PageModel
     {
         private BattleMonitor battleMonitor;
         private ulong userId;
@@ -28,7 +28,7 @@ namespace Annaki.Web.Pages
         private UserManager<IdentityUser> userManager;
         private ILogger<ExternalLoginModel> logger;
 
-        public AnnakiModel(
+        public KelpModel(
             SignInManager<IdentityUser> signInManager,
             UserManager<IdentityUser> userManager,
             ILogger<ExternalLoginModel> logger)

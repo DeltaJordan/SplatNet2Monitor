@@ -109,66 +109,80 @@ namespace Annaki
 
             await Client.ConnectAsync();
 
-            twitchApi = new TwitchAPI();
-            twitchApi.Settings.ClientId = Globals.BotSettings.TwitchClientId;
-            twitchApi.Settings.Secret = Globals.BotSettings.TwitchSecret;
-            twitchApi.Settings.AccessToken = twitchApi.Helix.Extensions.GetAccessToken();
+            try
+            {
+                twitchApi = new TwitchAPI();
+                twitchApi.Settings.ClientId = Globals.BotSettings.TwitchClientId;
+                twitchApi.Settings.Secret = Globals.BotSettings.TwitchSecret;
+                twitchApi.Settings.AccessToken = twitchApi.Helix.Extensions.GetAccessToken();
 
-            LiveStreamMonitorService liveStreamMonitorService = new LiveStreamMonitorService(twitchApi);
-            liveStreamMonitorService.SetChannelsByName(new List<string> { "DeltaJordan" });
-            liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
-            liveStreamMonitorService.Start();
+                LiveStreamMonitorService liveStreamMonitorService = new LiveStreamMonitorService(twitchApi);
+                liveStreamMonitorService.SetChannelsByName(new List<string> { "DeltaJordan" });
+                liveStreamMonitorService.OnStreamOnline += LiveStreamMonitorService_OnStreamOnline;
+                liveStreamMonitorService.Start();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
 
             await StartMonitor();
         }
 
         private static async void LiveStreamMonitorService_OnStreamOnline(object sender, OnStreamOnlineArgs e)
         {
-            if (Globals.BotSettings.StreamNotificationChannelId == 0)
-                return;
-
-            User user = await twitchApi.V5.Users.GetUserByIDAsync(e.Stream.UserId);
-
-            DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
-            {
-                Title = e.Stream.Title,
-                Url = $"https://www.twitch.tv/{user.Name}",
-                ImageUrl =
-                    $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg?rnd={new Random().Next()}",
-                Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
-                {
-                    Width = 270,
-                    Height = 270,
-                    Url = user.Logo
-                },
-                Color = new DiscordColor(100, 65, 165)
-            };
-
-            embedBuilder.WithAuthor(user.DisplayName);
-
             try
             {
-                GetGamesResponse gamesResponse =
-                    await twitchApi.Helix.Games.GetGamesAsync(new List<string> {e.Stream.GameId});
-                Game streamingGame = gamesResponse.Games.First();
+                if (Globals.BotSettings.StreamNotificationChannelId == 0)
+                    return;
 
-                embedBuilder.WithFooter($"Playing: {streamingGame.Name}", streamingGame.BoxArtUrl);
+                User user = await twitchApi.V5.Users.GetUserByIDAsync(e.Stream.UserId);
+
+                DiscordEmbedBuilder embedBuilder = new DiscordEmbedBuilder
+                {
+                    Title = e.Stream.Title,
+                    Url = $"https://www.twitch.tv/{user.Name}",
+                    ImageUrl =
+                        $"https://static-cdn.jtvnw.net/previews-ttv/live_user_{user.Name}-320x180.jpg?rnd={new Random().Next()}",
+                    Thumbnail = new DiscordEmbedBuilder.EmbedThumbnail
+                    {
+                        Width = 270,
+                        Height = 270,
+                        Url = user.Logo
+                    },
+                    Color = new DiscordColor(100, 65, 165)
+                };
+
+                embedBuilder.WithAuthor(user.DisplayName);
+
+                try
+                {
+                    GetGamesResponse gamesResponse =
+                        await twitchApi.Helix.Games.GetGamesAsync(new List<string> {e.Stream.GameId});
+                    Game streamingGame = gamesResponse.Games.First();
+
+                    embedBuilder.WithFooter($"Playing: {streamingGame.Name}", streamingGame.BoxArtUrl);
+                }
+                catch
+                {
+                    embedBuilder.WithTimestamp(DateTimeOffset.Now);
+                }
+
+                DiscordChannel notificationChannel =
+                    await Client.GetChannelAsync(Globals.BotSettings.StreamNotificationChannelId);
+                DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
+                    string.Equals(x.Value.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase)).Value;
+
+                if (notificationRole == null)
+                    return;
+
+                await notificationChannel.SendMessageAsync($"{notificationRole.Mention} DeltaJordan is live!",
+                    embed: embedBuilder.Build());
             }
-            catch
+            catch (Exception exception)
             {
-                embedBuilder.WithTimestamp(DateTimeOffset.Now);
+                Console.WriteLine(exception);
             }
-
-            DiscordChannel notificationChannel =
-                await Client.GetChannelAsync(Globals.BotSettings.StreamNotificationChannelId);
-            DiscordRole notificationRole = notificationChannel.Guild.Roles.FirstOrDefault(x =>
-                string.Equals(x.Value.Name, "Notifications", StringComparison.InvariantCultureIgnoreCase)).Value;
-
-            if (notificationRole == null)
-                return;
-
-            await notificationChannel.SendMessageAsync($"{notificationRole.Mention} DeltaJordan is live!",
-                embed: embedBuilder.Build());
         }
 
         private static async Task StartMonitor()

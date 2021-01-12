@@ -55,7 +55,7 @@ namespace Annaki.Web.Pages
 
             if (!this.battleMonitor.NeedsAuth)
             {
-                return this.Redirect("/Annaki");
+                return this.LocalRedirect(this.Url.Content("~/Kelp"));
             }
 
             return this.Page();
