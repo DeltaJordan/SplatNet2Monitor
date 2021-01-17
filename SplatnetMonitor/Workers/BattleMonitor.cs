@@ -181,103 +181,125 @@ namespace SplatNet2.Net.Monitor.Workers
 
         private async void MonitorTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (this.genericErrorCount >= 3 || this.NeedsAuth)
-            {
-                return;
-            }
-
-            string[] battles;
-
             try
             {
-                battles = await this.apiClient.RetrieveBattles(this.readBattleNumbers.ToArray());
-            }
-            catch (NullReferenceException ex)
-            {
-                await this.HandleAuthError(new ExpiredCookieException(ex.Message, null));
-
-                return;
-            }
-            catch (ExpiredCookieException ex)
-            {
-                await this.HandleAuthError(ex);
-
-                return;
-            }
-            catch (Exception ex)
-            {
-                this.ExceptionOccured?.Invoke(this, (this.genericErrorCount >= 3, ex));
-
-                this.genericErrorCount++;
-
-                return;
-            }
-
-            if (!battles.Any())
-                return;
-
-            string latestBattleJson = null;
-            int latestBattleNumber = -1;
-
-            Dictionary<int, string> battleDictionary = new Dictionary<int, string>();
-
-            foreach (string splatoonBattle in battles)
-            {
-                JObject splatnetJson = JObject.Parse(splatoonBattle);
-
-                int battleNumber = splatnetJson["battle_number"].Value<int>();
-
-                battleDictionary[battleNumber] = splatoonBattle;
-
-                this.readBattleNumbers.Add(battleNumber);
-
-                if (latestBattleNumber < battleNumber)
+                if (this.genericErrorCount >= 3 || this.NeedsAuth)
                 {
-                    latestBattleNumber = battleNumber;
-                    latestBattleJson = splatoonBattle;
+                    return;
+                }
+
+                string[] battles;
+
+                try
+                {
+                    battles = await this.apiClient.RetrieveBattles(this.readBattleNumbers.ToArray());
+                }
+                catch (NullReferenceException ex)
+                {
+                    await this.HandleAuthError(new ExpiredCookieException(ex.Message, null));
+
+                    return;
+                }
+                catch (ExpiredCookieException ex)
+                {
+                    await this.HandleAuthError(ex);
+
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    this.ExceptionOccured?.Invoke(this, (this.genericErrorCount >= 3, ex));
+
+                    this.genericErrorCount++;
+
+                    return;
+                }
+
+                if (!battles.Any())
+                    return;
+
+                string latestBattleJson = null;
+                int latestBattleNumber = -1;
+
+                Dictionary<int, string> battleDictionary = new Dictionary<int, string>();
+
+                foreach (string splatoonBattle in battles)
+                {
+                    JObject splatnetJson = JObject.Parse(splatoonBattle);
+
+                    int battleNumber = splatnetJson["battle_number"].Value<int>();
+
+                    battleDictionary[battleNumber] = splatoonBattle;
+
+                    this.readBattleNumbers.Add(battleNumber);
+
+                    if (latestBattleNumber < battleNumber)
+                    {
+                        latestBattleNumber = battleNumber;
+                        latestBattleJson = splatoonBattle;
+                    }
+                }
+
+                this.BattlesRetrieved?.Invoke(this, battleDictionary);
+
+                SplatoonBattle latestBattle;
+
+                try
+                {
+                    latestBattle = BattleJsonReader.ParseBattle(latestBattleJson);
+                }
+                catch (Exception exception)
+                {
+                    JObject splatnetJson = JObject.Parse(latestBattleJson);
+                    int battleNumber = splatnetJson["battle_number"].Value<int>();
+                    Console.WriteLine($"Unable to parse battle #{battleNumber}.");
+                    Console.WriteLine(exception);
+                    return;
+                }
+
+                List<SplatoonPlayer> otherPlayers = latestBattle.Players.Where(x => !x.IsMe).ToList();
+
+                foreach (Headgear headgear in this.lookingForHeadGears)
+                {
+                    SplatoonPlayer[] foundPlayer = otherPlayers
+                        .Where(x =>
+                            x.Gear.Headgear.MainAbility == headgear.MainAbility &&
+                            (headgear.HeadgearId == -1 || x.Gear.Headgear.HeadgearId == headgear.HeadgearId))
+                        .ToArray();
+
+                    if (foundPlayer.Any())
+                        this.HeadgearFound?.Invoke(this, foundPlayer);
+                }
+
+                foreach (Clothing clothing in this.lookingForClothing)
+                {
+                    SplatoonPlayer[] foundPlayer = otherPlayers
+                        .Where(x =>
+                            x.Gear.Clothing.MainAbility == clothing.MainAbility &&
+                            (clothing.ClothingId == -1 || x.Gear.Clothing.ClothingId == clothing.ClothingId))
+                        .ToArray();
+
+                    if (foundPlayer.Any())
+                        this.ClothingFound?.Invoke(this, foundPlayer);
+                }
+
+                foreach (Shoes shoes in this.lookingForShoes)
+                {
+                    SplatoonPlayer[] foundPlayer = otherPlayers
+                        .Where(x =>
+                            x.Gear.Shoes.MainAbility == shoes.MainAbility &&
+                            (shoes.ShoeId == -1 || x.Gear.Shoes.ShoeId == shoes.ShoeId))
+                        .ToArray();
+
+                    if (foundPlayer.Any())
+                        this.ShoesFound?.Invoke(this, foundPlayer);
                 }
             }
-
-            this.BattlesRetrieved?.Invoke(this, battleDictionary);
-
-            SplatoonBattle latestBattle = BattleJsonReader.ParseBattle(latestBattleJson);
-
-            List<SplatoonPlayer> otherPlayers = latestBattle.Players.Where(x => !x.IsMe).ToList();
-
-            foreach (Headgear headgear in this.lookingForHeadGears)
+            catch (Exception exception)
             {
-                SplatoonPlayer[] foundPlayer = otherPlayers
-                    .Where(x =>
-                        x.Gear.Headgear.MainAbility == headgear.MainAbility &&
-                        (headgear.HeadgearId == -1 || x.Gear.Headgear.HeadgearId == headgear.HeadgearId))
-                    .ToArray();
-
-                if (foundPlayer.Any())
-                    this.HeadgearFound?.Invoke(this, foundPlayer);
-            }
-
-            foreach (Clothing clothing in this.lookingForClothing)
-            {
-                SplatoonPlayer[] foundPlayer = otherPlayers
-                    .Where(x =>
-                        x.Gear.Clothing.MainAbility == clothing.MainAbility &&
-                        (clothing.ClothingId == -1 || x.Gear.Clothing.ClothingId == clothing.ClothingId))
-                    .ToArray();
-
-                if (foundPlayer.Any())
-                    this.ClothingFound?.Invoke(this, foundPlayer);
-            }
-
-            foreach (Shoes shoes in this.lookingForShoes)
-            {
-                SplatoonPlayer[] foundPlayer = otherPlayers
-                    .Where(x =>
-                        x.Gear.Shoes.MainAbility == shoes.MainAbility &&
-                        (shoes.ShoeId == -1 || x.Gear.Shoes.ShoeId == shoes.ShoeId))
-                    .ToArray();
-
-                if (foundPlayer.Any())
-                    this.ShoesFound?.Invoke(this, foundPlayer);
+                Console.WriteLine($"Monitor error occured. Exception is as follows:");
+                Console.WriteLine(exception);
+                Console.WriteLine("End Monitor Exception.");
             }
         }
     }
