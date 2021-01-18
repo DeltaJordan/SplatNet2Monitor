@@ -77,7 +77,9 @@ namespace SplatNet2.Net.Api.Data
                     splatoonBattle.LobbyGroup = LobbyGroup.Splatfest;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    splatoonBattle.Lobby = (Lobby) (-1);
+                    splatoonBattle.LobbyGroup = (LobbyGroup) (-1);
+                    break;
             }
 
             splatoonBattle.GameMode = scoreboardJson["rule"]["key"].Value<string>() switch
