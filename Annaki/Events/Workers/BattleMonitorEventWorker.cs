@@ -66,6 +66,7 @@ namespace Annaki.Events.Workers
             }
 
             Globals.BotSettings.Users[this.UserId].Cookie = e;
+            Globals.BotSettings.Users[this.UserId].Notified = false;
             Globals.BotSettings.SaveSettings();
 
             ClassLogger.Info("Cookie has been refreshed and updated successfully.");
@@ -163,24 +164,24 @@ namespace Annaki.Events.Workers
 
         public async void BattleMonitor_CookieExpired(object sender, ExpiredCookieException e)
         {
-            if (Globals.BotSettings.Users[this.UserId].Notified)
-            {
-                return;
-            }
-
             const string domain = "kelpdo.me";
-
-            DiscordMember owner = await Annaki.Client.Guilds.First().Value
-                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
 
             // TODO Use Main server for production.
             DiscordMember userMember = await Annaki.Client.Guilds.First(x => x.Key == 738823408686727248).Value
                 .GetMemberAsync(this.UserId);
 
-            DiscordDmChannel userDmChannel = await userMember.CreateDmChannelAsync();
+            if (!Globals.BotSettings.Users[this.UserId].Notified)
+            {
+                DiscordDmChannel userDmChannel = await userMember.CreateDmChannelAsync();
 
-            await userDmChannel.SendMessageAsync($"Your Nintendo cookie has expired. " +
-                                                 $"Please proceed to https://{domain}/Refresh to refresh your cookie.");
+                await userDmChannel.SendMessageAsync($"Your Nintendo cookie has expired. " +
+                                                     $"Please proceed to https://{domain}/Refresh to refresh your cookie.");
+
+                return;
+            }
+
+            DiscordMember owner = await Annaki.Client.Guilds.First().Value
+                .GetMemberAsync(Annaki.Client.CurrentApplication.Owners.First().Id);
 
             DiscordDmChannel dmChannel = await owner.CreateDmChannelAsync();
 
